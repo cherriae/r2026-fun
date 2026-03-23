@@ -33,6 +33,8 @@ import edu.wpi.first.units.measure.Per;
  */
 public final class Constants {
   public static final Frequency simNotifierFrequency = Hertz.of(200);
+  public static final CANBus subsystemsCANBus = new CANBus("subsystems");
+  public static final CANBus swerveCANBus = new CANBus("canivore");
 
   public static class Ports {
     public static final int driverController = 0;
@@ -55,6 +57,14 @@ public final class Constants {
     // }
   }
 
+  public static class MotorConstants {
+    public static final DCMotor krakenX60 =
+        new DCMotor(12, 7.16, 374.4, 3, Units.rotationsPerMinuteToRadiansPerSecond(6065), 1);
+
+    public static final DCMotor krakenX44 =
+        new DCMotor(12, 4.11, 279.1, 3, Units.rotationsPerMinuteToRadiansPerSecond(7758), 1);
+  }
+
   public static class VisionConstants {
     public static final double singleTagStdDevsScaler = 5;
 
@@ -63,13 +73,39 @@ public final class Constants {
     public static final double xBoundMargin = 0.01;
     public static final double yBoundMargin = 0.01;
     public static final double zBoundMargin = 0.01;
+
+    public static final VisionPoseEstimatorConstants leftArducam =
+        new VisionPoseEstimatorConstants(
+            leftArducamName,
+            new Transform3d(
+                new Translation3d(
+                    -Units.inchesToMeters(9.8578),
+                    Units.inchesToMeters(9.6913),
+                    Units.inchesToMeters(20.2395)),
+                new Rotation3d(0, 0, -Units.degreesToRadians(15))),
+            0.1,
+            3,
+            7);
+
+    public static final VisionPoseEstimatorConstants rightArducam =
+        new VisionPoseEstimatorConstants(
+            rightArducamName,
+            new Transform3d(
+                new Translation3d(
+                    -Units.inchesToMeters(9.8578),
+                    -Units.inchesToMeters(9.6913),
+                    Units.inchesToMeters(20.2395)),
+                new Rotation3d(0, 0, Units.degreesToRadians(15))),
+            0.1,
+            3,
+            7);
   }
 
   public static class SwerveConstants {
     public static final Frequency odometryFrequency = Hertz.of(250);
 
-    public static final Mass mass = Pounds.of(136.38);
-    public static final MomentOfInertia moi = KilogramSquareMeters.of(0);
+    public static final Mass mass = Pounds.of(103);
+    public static final MomentOfInertia moi = KilogramSquareMeters.of(8);
 
     public static final LinearVelocity driverTranslationalVelocity = MetersPerSecond.of(4);
     public static final AngularVelocity driverAngularVelocity = RadiansPerSecond.of(Math.PI);
@@ -95,4 +131,76 @@ public final class Constants {
     public static LinearVelocity translationalDeadband = MetersPerSecond.of(0.01);
     public static AngularVelocity rotationalDeadband = RadiansPerSecond.of(0.01);
   }
+
+  public class ShooterConstants {
+    public static final int shooterLeftFlywheelID = 1;
+    public static final int shooterRightFlywheelID = 2;
+
+
+    public static final Voltage flywheelkS = Volts.of(0.13262);
+    public static final Per<VoltageUnit, AngularVelocityUnit> flywheelkV =
+        Volts.per(RotationsPerSecond).ofNative(0.13334);
+    public static final Per<VoltageUnit, AngularVelocityUnit> flywheelkP =
+        Volts.per(RotationsPerSecond).ofNative(0.2);
+
+    public static final double shooterGearRatio = 1.2;
+  }
+
+  public class HopperConstants {
+    public static int feedMotorID = 3;
+    public static int rollerMotorID = 4;
+
+
+    public static final Voltage feedKs = Volts.of(0);
+    public static final Per<VoltageUnit, AngularVelocityUnit> feedKv =
+        Volts.per(RotationsPerSecond).ofNative(0);
+    public static final Per<VoltageUnit, AngularVelocityUnit> feedKp =
+        Volts.per(RotationsPerSecond).ofNative(0);
+
+    public static final Voltage rollerKs = Volts.of(0);
+    public static final Per<VoltageUnit, AngularVelocityUnit> rollerKv =
+        Volts.per(RotationsPerSecond).ofNative(0);
+    public static final Per<VoltageUnit, AngularVelocityUnit> rollerKp =
+        Volts.per(RotationsPerSecond).ofNative(0);
+
+    public static final double feedGearRatio = 2.25;
+    public static final double rollerGearRatio = 2;
+  }
+
+  public class IntakeConstants {
+    public static final int intakeMotorID = 5;
+    public static final int pivotMotorID = 6;
+
+    public static final Voltage intakeKs = Volts.of(0);
+    public static final Per<VoltageUnit, AngularVelocityUnit> intakeKv =
+        Volts.per(RotationsPerSecond).ofNative(0);
+    public static final Per<VoltageUnit, AngularVelocityUnit> intakeKp =
+        Volts.per(RotationsPerSecond).ofNative(0);
+
+    public static final Voltage pivotKg = Volts.of(0);
+    public static final Voltage pivotKs = Volts.of(0);
+    public static final Per<VoltageUnit, AngularVelocityUnit> pivotKv =
+        Volts.per(RotationsPerSecond).ofNative(0);
+    public static final Per<VoltageUnit, AngularVelocityUnit> pivotKp =
+        Volts.per(RotationsPerSecond).ofNative(0);
+    public static final Per<VoltageUnit, AngleUnit> pivotKa =
+        Volts.per(Radian).ofNative(0);
+
+    public static final double intakeGearRatio = 2;
+    public static final double pivotGearRatio = 20;
+  }
+
+  public class ClimberConstants {
+    public static final int ClimberMotorID = 7;
+
+    public static final Voltage climberKg = Volts.of(0);
+    public static final Voltage climberKs = Volts.of(0);
+    public static final Per<VoltageUnit, LinearVelocityUnit> climberKv =
+        Volts.per(MetersPerSecond).ofNative(0);
+    public static final Per<VoltageUnit, LinearVelocityUnit> climberKp =
+        Volts.per(MetersPerSecond).ofNative(0);
+    public static final Per<VoltageUnit, AngleUnit> climberKa =
+        Volts.per(Radian).ofNative(0);
+
+    public static final double climberGearRatio = 16;
 }
