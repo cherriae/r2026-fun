@@ -9,6 +9,7 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static edu.wpi.first.wpilibj2.command.button.RobotModeTriggers.*;
 
 import choreo.auto.AutoChooser;
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.SignalLogger;
 import dev.doglog.DogLog;
 import edu.wpi.first.epilogue.Epilogue;
@@ -22,6 +23,7 @@ import edu.wpi.first.util.ClassPreloader;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobotBase;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Watchdog;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -35,8 +37,7 @@ import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.Autos;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
-import frc.robot.util.KernelLogMonitor;
-
+import frc.robot.utils.KernelLogMonitor;
 import java.lang.reflect.Field;
 
 /**
@@ -191,12 +192,9 @@ public class Robot extends TimedRobot {
 
     // intake feed
 
-
     // intake pivot
 
-
     // hopper feed and rollers and shoot when ready
-
 
   }
 
@@ -209,7 +207,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    long loopStart = Constants.PROFILING_ENABLED ? System.nanoTime() : 0;
+    long loopStart = Constants.isProfiling ? System.nanoTime() : 0;
     // DogLog.time("Timing/Robot/robotPeriodic()");
 
     // Runs the Scheduler.  This is responsible for polling buttons, adding newly-scheduled
@@ -231,9 +229,11 @@ public class Robot extends TimedRobot {
     long t2 = Constants.isProfiling ? System.nanoTime() : 0;
 
     if (Constants.isProfiling) {
-      long kernelLogTime = (t2 - t1) / 1e6;
+      logCANBus("swerve", Constants.swerveCANBus);
+      logCANBus("subsystems", Constants.subsystemsCANBus);
+      long kernelLogTime = (long) ((t2 - t1) / 1e6);
 
-      if (t2-loopStart > 20) {
+      if (t2 - loopStart > 20) {
         System.out.println(
             String.format(
                 "Warning: robotPeriodic loop took %.2f ms (KernelLogMonitor publish took %.2f ms)",
@@ -253,13 +253,13 @@ public class Robot extends TimedRobot {
     CommandScheduler.getInstance().cancelAll();
   }
 
-
   private static void logCANBus(String name, CANBus bus) {
-    Doglog.log(name + "/Bus Utilization", bus.getUtilization());
-    Doglog.log("CANBus/" + name + "/BusOffCount", (long) status.BusOffCount);
-    Doglog.log("CANBus/" + name + "/TxFullCount", (long) status.TxFullCount);
-    Doglog.log("CANBus/" + name + "/REC", (long) status.REC);
-    Doglog.log("CANBus/" + name + "/TEC", (long) status.TEC);
+    var status = bus.getStatus();
+    DogLog.log(name + "/Bus Utilization", status.BusUtilization);
+    DogLog.log("CANBus/" + name + "/BusOffCount", (long) status.BusOffCount);
+    DogLog.log("CANBus/" + name + "/TxFullCount", (long) status.TxFullCount);
+    DogLog.log("CANBus/" + name + "/REC", (long) status.REC);
+    DogLog.log("CANBus/" + name + "/TEC", (long) status.TEC);
   }
 
   @Override

@@ -6,14 +6,21 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.AngleUnit;
 import edu.wpi.first.units.AngularVelocityUnit;
 import edu.wpi.first.units.DistanceUnit;
 import edu.wpi.first.units.LinearVelocityUnit;
+import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Frequency;
@@ -22,6 +29,8 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Mass;
 import edu.wpi.first.units.measure.MomentOfInertia;
 import edu.wpi.first.units.measure.Per;
+import edu.wpi.first.units.measure.Voltage;
+import frc.robot.utils.VisionPoseEstimator.VisionPoseEstimatorConstants;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
@@ -78,7 +87,7 @@ public final class Constants {
 
     public static final VisionPoseEstimatorConstants leftArducam =
         new VisionPoseEstimatorConstants(
-            leftArducamName,
+            "left-arducam",
             new Transform3d(
                 new Translation3d(
                     -Units.inchesToMeters(9.8578),
@@ -91,7 +100,7 @@ public final class Constants {
 
     public static final VisionPoseEstimatorConstants rightArducam =
         new VisionPoseEstimatorConstants(
-            rightArducamName,
+            "right-arducam",
             new Transform3d(
                 new Translation3d(
                     -Units.inchesToMeters(9.8578),
@@ -138,7 +147,6 @@ public final class Constants {
     public static final int shooterLeftFlywheelID = 1;
     public static final int shooterRightFlywheelID = 2;
 
-
     public static final Voltage flywheelkS = Volts.of(0.13262);
     public static final Per<VoltageUnit, AngularVelocityUnit> flywheelkV =
         Volts.per(RotationsPerSecond).ofNative(0.13334);
@@ -151,7 +159,6 @@ public final class Constants {
   public class HopperConstants {
     public static int feedMotorID = 3;
     public static int rollerMotorID = 4;
-
 
     public static final Voltage feedKs = Volts.of(0.17);
     public static final Per<VoltageUnit, AngularVelocityUnit> feedKv =
@@ -185,8 +192,7 @@ public final class Constants {
         Volts.per(RotationsPerSecond).ofNative(0);
     public static final Per<VoltageUnit, AngularVelocityUnit> pivotKp =
         Volts.per(RotationsPerSecond).ofNative(0);
-    public static final Per<VoltageUnit, AngleUnit> pivotKa =
-        Volts.per(Radian).ofNative(0);
+    public static final Per<VoltageUnit, AngleUnit> pivotKa = Volts.per(Radian).ofNative(0);
 
     public static final double intakeGearRatio = 2;
     public static final double pivotGearRatio = 20;
@@ -201,8 +207,7 @@ public final class Constants {
         Volts.per(MetersPerSecond).ofNative(0);
     public static final Per<VoltageUnit, LinearVelocityUnit> climberKp =
         Volts.per(MetersPerSecond).ofNative(0);
-    public static final Per<VoltageUnit, AngleUnit> climberKa =
-        Volts.per(Radian).ofNative(0);
+    public static final Per<VoltageUnit, AngleUnit> climberKa = Volts.per(Radian).ofNative(0);
 
     public static final double climberGearRatio = 16;
   }

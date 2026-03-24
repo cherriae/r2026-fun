@@ -1,7 +1,7 @@
 /** Code created by Team 2363 Triple Helix */
-
 package frc.robot.utils;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.RobotBase;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,16 +11,12 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import dev.doglog.DogLog;
-
-
 /**
- * Monitors RoboRIO kernel logs for unexpected events (USB disconnects, ESD events, hardware
- * errors) and publishes them to NetworkTables via AdvantageKit Logger.
+ * Monitors RoboRIO kernel logs for unexpected events (USB disconnects, ESD events, hardware errors)
+ * and publishes them to NetworkTables via AdvantageKit Logger.
  *
- * <p>Uses a long-running dmesg process in follow mode with a blocking reader thread for
- * efficiency. This is a singleton that runs as a daemon thread for the lifetime of the robot
- * program.
+ * <p>Uses a long-running dmesg process in follow mode with a blocking reader thread for efficiency.
+ * This is a singleton that runs as a daemon thread for the lifetime of the robot program.
  */
 public class KernelLogMonitor {
 
@@ -44,36 +40,34 @@ public class KernelLogMonitor {
       this.pattern = pattern;
     }
 
-  
-  /**
-   * Tests if this pattern matches the given line.
-   *
-   * @param line the log line to test
-   * @return true if the pattern matches
-   */
-  public boolean matches(String line) {
-    return pattern.matcher(line).find();
-  }
+    /**
+     * Tests if this pattern matches the given line.
+     *
+     * @param line the log line to test
+     * @return true if the pattern matches
+     */
+    public boolean matches(String line) {
+      return pattern.matcher(line).find();
+    }
 
-  /**
-   * Finds the first matching event pattern for the given line.
-   *
-   * @param line the log line to test
-   * @return the matching EventPattern, or null if no match
-   */
-  public static EventPattern findMatch(String line) {
-    return Arrays.stream(values())
-        .filter(pattern -> pattern.matches(line))
-        .findFirst()
-        .orElse(null);
+    /**
+     * Finds the first matching event pattern for the given line.
+     *
+     * @param line the log line to test
+     * @return the matching EventPattern, or null if no match
+     */
+    public static EventPattern findMatch(String line) {
+      return Arrays.stream(values())
+          .filter(pattern -> pattern.matches(line))
+          .findFirst()
+          .orElse(null);
     }
   }
 
   /** Kernel event record containing timestamp, message, and event type. */
   public record KernelEvent(String timestamp, String message, String eventType) {}
 
-  private final BlockingQueue<KernelEvent> eventQueue =
-      new LinkedBlockingQueue<>(MAX_QUEUE_SIZE);
+  private final BlockingQueue<KernelEvent> eventQueue = new LinkedBlockingQueue<>(MAX_QUEUE_SIZE);
 
   private Process dmesgProcess;
   private ExecutorService executor;
@@ -129,12 +123,12 @@ public class KernelLogMonitor {
 
       // Create single-threaded executor with daemon threads
       executor =
-        Executors.newSingleThreadExecutor(
-            r -> {
-              var t = new Thread(r, "KernelLogMonitor");
-              t.setDaemon(true);
-              return t;
-            });
+          Executors.newSingleThreadExecutor(
+              r -> {
+                var t = new Thread(r, "KernelLogMonitor");
+                t.setDaemon(true);
+                return t;
+              });
 
       running = true; // Set before submitting to avoid race condition
 
@@ -142,8 +136,7 @@ public class KernelLogMonitor {
       executor.submit(
           () -> {
             try (var reader =
-                new BufferedReader(
-                    new InputStreamReader(dmesgProcess.getInputStream()))) {
+                new BufferedReader(new InputStreamReader(dmesgProcess.getInputStream()))) {
 
               System.out.println("[KernelLogMonitor] Started");
 
@@ -275,7 +268,8 @@ public class KernelLogMonitor {
 
     KernelEvent e;
     while ((e = eventQueue.poll()) != null && count < MAX_EVENTS_PER_CYCLE) {
-      recent.append('[')
+      recent
+          .append('[')
           .append(e.timestamp())
           .append("] ")
           .append(e.eventType())
@@ -310,7 +304,6 @@ public class KernelLogMonitor {
     DogLog.log("Kernel/Stats/Other", otherEvents.get());
     DogLog.log("Kernel/Running", running);
   }
-
 
   /** Returns true if the monitor is currently running. */
   public boolean isRunning() {
