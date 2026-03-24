@@ -35,6 +35,8 @@ import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.Autos;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
+import frc.robot.util.KernelLogMonitor;
+
 import java.lang.reflect.Field;
 
 /**
@@ -116,6 +118,8 @@ public class Robot extends TimedRobot {
     autonomous().whileTrue(chooser.selectedCommandScheduler());
 
     preventChoreoDelay();
+
+    KernelLogMonitor.getInstance();
   }
 
   /** Watchdog config / class preloading needed to prevent choreo delay. */
@@ -184,6 +188,16 @@ public class Robot extends TimedRobot {
     _driverController.x().whileTrue(_swerve.brake());
     _driverController.a().onTrue(_swerve.toggleFieldOriented());
     _driverController.y().onTrue(_swerve.resetHeading());
+
+    // intake feed
+
+
+    // intake pivot
+
+
+    // hopper feed and rollers and shoot when ready
+
+
   }
 
   /**
@@ -195,18 +209,36 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    DogLog.time("Timing/Robot/robotPeriodic()");
+    long loopStart = Constants.PROFILING_ENABLED ? System.nanoTime() : 0;
+    // DogLog.time("Timing/Robot/robotPeriodic()");
 
     // Runs the Scheduler.  This is responsible for polling buttons, adding newly-scheduled
     // commands, running already-scheduled commands, removing finished or interrupted commands,
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+    long t1 = Constants.isProfiling ? System.nanoTime() : 0;
 
     if (DriverStation.isFMSAttached() && !_fileOnlySet) {
       setFileOnly(true);
 
       _fileOnlySet = true;
+    }
+
+    if (RobotBase.isReal()) {
+      KernelLogMonitor.getInstance().publish();
+    }
+    long t2 = Constants.isProfiling ? System.nanoTime() : 0;
+
+    if (Constants.isProfiling) {
+      long kernelLogTime = (t2 - t1) / 1e6;
+
+      if (t2-loopStart > 20) {
+        System.out.println(
+            String.format(
+                "Warning: robotPeriodic loop took %.2f ms (KernelLogMonitor publish took %.2f ms)",
+                (t2 - loopStart) / 1e6, kernelLogTime));
+      }
     }
 
     DogLog.timeEnd("Timing/Robot/robotPeriodic()");
@@ -219,6 +251,15 @@ public class Robot extends TimedRobot {
   public void testInit() {
     // Cancels all running commands at the start of test mode.
     CommandScheduler.getInstance().cancelAll();
+  }
+
+
+  private static void logCANBus(String name, CANBus bus) {
+    Doglog.log(name + "/Bus Utilization", bus.getUtilization());
+    Doglog.log("CANBus/" + name + "/BusOffCount", (long) status.BusOffCount);
+    Doglog.log("CANBus/" + name + "/TxFullCount", (long) status.TxFullCount);
+    Doglog.log("CANBus/" + name + "/REC", (long) status.REC);
+    Doglog.log("CANBus/" + name + "/TEC", (long) status.TEC);
   }
 
   @Override

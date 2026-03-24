@@ -36,6 +36,8 @@ public final class Constants {
   public static final CANBus subsystemsCANBus = new CANBus("subsystems");
   public static final CANBus swerveCANBus = new CANBus("canivore");
 
+  public static final boolean isProfiling = false;
+
   public static class Ports {
     public static final int driverController = 0;
   }
@@ -151,17 +153,17 @@ public final class Constants {
     public static int rollerMotorID = 4;
 
 
-    public static final Voltage feedKs = Volts.of(0);
+    public static final Voltage feedKs = Volts.of(0.17);
     public static final Per<VoltageUnit, AngularVelocityUnit> feedKv =
-        Volts.per(RotationsPerSecond).ofNative(0);
+        Volts.per(RotationsPerSecond).ofNative(0.235);
     public static final Per<VoltageUnit, AngularVelocityUnit> feedKp =
-        Volts.per(RotationsPerSecond).ofNative(0);
+        Volts.per(RotationsPerSecond).ofNative(0.6);
 
-    public static final Voltage rollerKs = Volts.of(0);
+    public static final Voltage rollerKs = Volts.of(0.21);
     public static final Per<VoltageUnit, AngularVelocityUnit> rollerKv =
-        Volts.per(RotationsPerSecond).ofNative(0);
+        Volts.per(RotationsPerSecond).ofNative(0.28);
     public static final Per<VoltageUnit, AngularVelocityUnit> rollerKp =
-        Volts.per(RotationsPerSecond).ofNative(0);
+        Volts.per(RotationsPerSecond).ofNative(0.6);
 
     public static final double feedGearRatio = 2.25;
     public static final double rollerGearRatio = 2;
@@ -171,11 +173,11 @@ public final class Constants {
     public static final int intakeMotorID = 5;
     public static final int pivotMotorID = 6;
 
-    public static final Voltage intakeKs = Volts.of(0);
-    public static final Per<VoltageUnit, AngularVelocityUnit> intakeKv =
-        Volts.per(RotationsPerSecond).ofNative(0);
-    public static final Per<VoltageUnit, AngularVelocityUnit> intakeKp =
-        Volts.per(RotationsPerSecond).ofNative(0);
+    public static final Voltage feedKs = Volts.of(0.34);
+    public static final Per<VoltageUnit, AngularVelocityUnit> feedKv =
+        Volts.per(RotationsPerSecond).ofNative(0.205);
+    public static final Per<VoltageUnit, AngularVelocityUnit> feedKp =
+        Volts.per(RotationsPerSecond).ofNative(0.6);
 
     public static final Voltage pivotKg = Volts.of(0);
     public static final Voltage pivotKs = Volts.of(0);
@@ -203,4 +205,5 @@ public final class Constants {
         Volts.per(Radian).ofNative(0);
 
     public static final double climberGearRatio = 16;
+  }
 }
