@@ -36,6 +36,11 @@ import frc.robot.Constants.Ports;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.Autos;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.Climb;
+import frc.robot.subsystems.Hopper;
+import frc.robot.subsystems.IntakeFeed;
+import frc.robot.subsystems.IntakePivot;
+import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 import frc.robot.utils.KernelLogMonitor;
 import java.lang.reflect.Field;
@@ -54,6 +59,21 @@ public class Robot extends TimedRobot {
   // subsystems
   @Logged(name = "Swerve")
   private final Swerve _swerve = TunerConstants.createDrivetrain();
+
+  @Logged(name = "Shooter")
+  private final Shooter _shooter = new Shooter();
+
+  @Logged(name = "IntakeFeed")
+  private final IntakeFeed _intakeFeed = new IntakeFeed();
+
+  @Logged(name = "IntakePivot")
+  private final IntakePivot _intakePivot = new IntakePivot();
+
+  @Logged(name = "Climb")
+  private final Climb _climb = new Climb();
+
+  @Logged(name = "Hopper")
+  private final Hopper _hopper = new Hopper();
 
   private final Autos _autos = new Autos(_swerve);
 
@@ -235,9 +255,11 @@ public class Robot extends TimedRobot {
 
       if (t2 - loopStart > 20) {
         System.out.println(
-            String.format(
-                "Warning: robotPeriodic loop took %.2f ms (KernelLogMonitor publish took %.2f ms)",
-                (t2 - loopStart) / 1e6, kernelLogTime));
+            "[Profiling]: Loop took "
+                + (t2 - loopStart) / 1e6
+                + " ms, with "
+                + kernelLogTime
+                + " ms spent on kernel log monitoring");
       }
     }
 
@@ -255,7 +277,7 @@ public class Robot extends TimedRobot {
 
   private static void logCANBus(String name, CANBus bus) {
     var status = bus.getStatus();
-    DogLog.log(name + "/Bus Utilization", status.BusUtilization);
+    DogLog.log("CANBus/" + name + "/Bus Utilization", status.BusUtilization);
     DogLog.log("CANBus/" + name + "/BusOffCount", (long) status.BusOffCount);
     DogLog.log("CANBus/" + name + "/TxFullCount", (long) status.TxFullCount);
     DogLog.log("CANBus/" + name + "/REC", (long) status.REC);

@@ -45,7 +45,7 @@ public final class Constants {
   public static final CANBus subsystemsCANBus = new CANBus("subsystems");
   public static final CANBus swerveCANBus = new CANBus("canivore");
 
-  public static final boolean isProfiling = false;
+  public static final boolean isProfiling = true;
 
   public static class Ports {
     public static final int driverController = 0;
@@ -177,7 +177,7 @@ public final class Constants {
   }
 
   public class IntakeConstants {
-    public static final int intakeMotorID = 5;
+    public static final int feedMotorID = 5;
     public static final int pivotMotorID = 6;
 
     public static final Voltage feedKs = Volts.of(0.34);
@@ -194,7 +194,7 @@ public final class Constants {
         Volts.per(RotationsPerSecond).ofNative(0);
     public static final Per<VoltageUnit, AngleUnit> pivotKa = Volts.per(Radian).ofNative(0);
 
-    public static final double intakeGearRatio = 2;
+    public static final double feedGearRatio = 2;
     public static final double pivotGearRatio = 20;
   }
 
