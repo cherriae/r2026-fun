@@ -52,7 +52,7 @@ public final class Constants {
   public static final CANBus subsystemsCANBus = new CANBus("subsystems");
   public static final CANBus swerveCANBus = new CANBus("canivore");
 
-  public static final boolean isProfiling = true;
+  public static final boolean isProfiling = false;
 
   public static class Ports {
     public static final int driverController = 0;
@@ -62,7 +62,19 @@ public final class Constants {
     public static final AprilTagFieldLayout tagLayout =
         AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
 
+
+    public static final Translation2d blueHub =
+        new Translation2d(
+            tagLayout.getTagPose(26).get().getX() + Units.inchesToMeters(47.0) / 2.0,
+            tagLayout.getFieldWidth() / 2.0);
+            
+    public static final Translation2d redHub =
+        blueHub.rotateAround(
+            new Translation2d(tagLayout.getFieldLength() / 2.0, tagLayout.getFieldWidth() / 2.0),
+            Rotation2d.k180deg);
+
     
+    // update
     public static final Rectangle2d blueBumpZone = new Rectangle2d(Pose2d.kZero, 1, 1);
     public static final Rectangle2d redBumpZone = new Rectangle2d(Pose2d.kZero, 1, 1);
 
@@ -178,8 +190,20 @@ public final class Constants {
     public static final InterpolatingDoubleTreeMap hubTOF = new InterpolatingDoubleTreeMap();
 
     static {
+      hubPresets.put(1.89, vec3(38, 50, 40));
+      hubPresets.put(2.665, vec3(43, 50, 40));
+      hubPresets.put(3.768, vec3(47.75, 50, 40));
+      hubPresets.put(4.574, vec3(51.8, 50, 40));
+      hubPresets.put(5.252, vec3(52, 50, 40));
 
+      hubTOF.put(1.89, 0.955);
+      hubTOF.put(2.665, 1.08);
+      hubTOF.put(3.768, 1.38);
+      hubTOF.put(4.574, 1.53);
+      hubTOF.put(5.252, 1.525);
     }
+
+    public static final LinearVelocity horizontolProjectileVelocity = MetersPerSecond.of(2.722);
   }
 
   public class HopperConstants {
@@ -238,8 +262,7 @@ public final class Constants {
     public static final double climberGearRatio = 16;
   }
 
-public static Matrix<N3, N1> vec3(int i, int j, int k) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'vec3'");
-}
+    public static Matrix<N3, N1> vec3(double a, double b, double c) {
+        return new Matrix<N3, N1>(N3.instance, N1.instance, new double[] {a, b, c});
+    }
 }
