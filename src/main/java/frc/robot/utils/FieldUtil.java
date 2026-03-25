@@ -83,7 +83,7 @@ public class FieldUtil {
   }
 
   public void log(Pose2d robotPose) {
-    DogLog.log("FieldUtil/Alliance", alliance.get().toString());
+    DogLog.log("FieldUtil/Alliance", DriverStation.getAlliance().orElse(Alliance.Blue).toString());
     DogLog.log("FieldUtil/Is Hub Active", isHubActive());
     DogLog.log("FieldUtil/In Bump Zone", inBumpZone(robotPose));
     DogLog.log("FieldUtil/In Alliance Zone", inAllianceZone(robotPose));

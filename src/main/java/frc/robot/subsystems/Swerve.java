@@ -154,6 +154,9 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
   @Logged(name = "Ignore Vision Estimates")
   private boolean _ignoreVisionEstimates = false;
 
+  @Logged( name = "Distance To Hub" )
+  public Distance distanceToHub = Meters.of(0);
+
   private final List<VisionPoseEstimator> _cameras = List.of();
 
   private final List<VisionPoseEstimate> _newEstimates = new ArrayList<>();
@@ -524,7 +527,17 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
           });
     }
 
+    distanceToHub = getDistanceToHub();
+
     DogLog.timeEnd("Timing/Swerve/periodic()");
+  }
+
+  public Distance getDistanceToHub() {
+    if (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue) {
+      return Meters.of(FieldConstants.blueHub.getDistance(getPose().getTranslation()));
+    } else {
+      return Meters.of(FieldConstants.redHub.getDistance(getPose().getTranslation()));
+    }
   }
 
   @Override

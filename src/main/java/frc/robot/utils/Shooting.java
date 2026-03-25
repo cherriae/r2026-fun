@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -29,6 +30,9 @@ public class Shooting {
   @Logged(name = "isValid")
   public boolean isValid = false;
 
+  @Logged(name = "In Bound")
+  public boolean inBound = false;
+
   @Logged(name = "Convergence Failed")
   private boolean convergenceFailed = true;
 
@@ -38,24 +42,24 @@ public class Shooting {
   private final int maxIterations = 10;
   private final double errorTolerance = 0.5;
 
-  public Shooting() {
-    isValid = true;
-  }
+  public Shooting() {}
 
-  public Shooting(
-      boolean shooterReady,
-      boolean headingWithinTolerance, // fix later with actual heading check
-      Pose2d robotPose) {
+  public void updateIsValid(
+    boolean shooterReady,
+    boolean headingWithinTolerance, // fix later with actual heading check
+    Pose2d robotPose
+  ) {
     isValid =
         shooterReady
         && headingWithinTolerance
         && FieldUtil.inAllianceZone(robotPose)
-        && !convergenceFailed;
+        && !convergenceFailed
+        && inBound;
   }
 
   // newton's method to find the heading to shoot at to hit the target
-  public void calculateShotHeading(Pose2d robotPose, ChassisSpeeds robotSpeeds, Alliance alliance) {
-    if (alliance == null) {
+  public void calculateShotHeading(Pose2d robotPose, ChassisSpeeds robotSpeeds, Alliance alliance, boolean shooterReady, boolean headingWithinTolerance) {
+    if (alliance == null || !FieldUtil.inAllianceZone(robotPose)) {
         return;
     }
 
@@ -87,13 +91,20 @@ public class Shooting {
       double tof =
           Constants.ShooterConstants.hubTOF.get(
               robotTranslationToTarget.getNorm()); // interpolation of the tof
-      double dT_dt =
-          -robotTranslationToTarget.dot(robotVelocity)
-              / (Constants.ShooterConstants.horizontolProjectileVelocity.in(MetersPerSecond)
-                  * robotTranslationToTarget
-                      .getNorm()); // need to fix when distance is outside table bounds
+      double dT_dt = 0;
+    
+      if (robotTranslationToTarget.getNorm() == MathUtil.clamp(robotTranslationToTarget.getNorm(), 1, 5.7)) {
+        dT_dt =
+            -robotTranslationToTarget.dot(robotVelocity)
+                / (Constants.ShooterConstants.horizontolProjectileVelocity.in(MetersPerSecond)
+                    * robotTranslationToTarget
+                        .getNorm()); // need to fix when distance is outside table bounds
+        // pos = moving away from target
+        // neg = moving closer to target
+        // -(vector from robot to target dot velocity of robot) / distance to target 
+      }
 
-      double error = initialGuess - tof;
+      double error = initialGuess - tof; // guess - interpolation
       double dError_dt = 1 - error/dT_dt;
 
       if (Math.abs(error) < errorTolerance) {
@@ -104,7 +115,7 @@ public class Shooting {
                         Math.abs(
                             robotTranslationToTarget.dot(robotVelocity)
                                 / (robotTranslationToTarget.getNorm()
-                                    * robotVelocity.getNorm())))));
+                                    * robotVelocity.getNorm()))))); // this is for checking if the robot and projectile vectors overlap too much
 
         setVirtualTarget(target.getTranslation().minus(robotVelocity.times(initialGuess)));
         double distanceToVirtualTarget =
@@ -122,14 +133,19 @@ public class Shooting {
 
         newtonIterations = i + 1;
         convergenceFailed = false;
+
+        inBound = 1 < distanceToVirtualTarget && distanceToVirtualTarget < 5.7;
+
         break;
       }
 
-      initialGuess = initialGuess - (error / dError_dt);
+      initialGuess = initialGuess - (error / dError_dt); // update guess
     }
     if (newtonIterations == maxIterations) {
         convergenceFailed = true;
     }
+
+    updateIsValid(shooterReady, headingWithinTolerance, robotPose);
   }
 
   public Rotation2d getShotHeading() {

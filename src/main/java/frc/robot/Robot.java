@@ -80,7 +80,9 @@ public class Robot extends TimedRobot {
   private final Hopper _hopper = new Hopper();
 
   @Logged(name = "Shooting")
-  private final Shooting _shooting = new Shooting(true, true, _swerve.getPose());
+  private final Shooting _shooting = new Shooting();
+
+  private final FieldUtil _fieldUtil = new FieldUtil();
 
   private final Autos _autos = new Autos(_swerve);
 
@@ -270,10 +272,11 @@ public class Robot extends TimedRobot {
       }
     }
 
+    _fieldUtil.log(_swerve.getPose());
     _shooting.calculateShotHeading(
         _swerve.getPose(),
         ChassisSpeeds.fromFieldRelativeSpeeds(_swerve.getChassisSpeeds(), _swerve.getHeading()),
-        DriverStation.getAlliance().orElse(Alliance.Blue));
+        DriverStation.getAlliance().orElse(Alliance.Blue), true, true);
 
     DogLog.timeEnd("Timing/Robot/robotPeriodic()");
 
