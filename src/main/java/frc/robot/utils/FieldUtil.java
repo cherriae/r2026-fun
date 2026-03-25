@@ -1,15 +1,14 @@
 package frc.robot.utils;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.FieldConstants;
 import java.util.Optional;
 
-import dev.doglog.DogLog;
-
 public class FieldUtil {
-  public static Optional<Alliance> alliance;
+  public static Optional<Alliance> alliance = Optional.empty();
   public static double timeTolerance = 3;
 
   private static double prevSwitchTime = 110;
@@ -72,7 +71,7 @@ public class FieldUtil {
   }
 
   public static boolean inAllianceZone(Pose2d robotPose) {
-    if (alliance.get() == Alliance.Blue) {
+    if (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue) {
       return FieldConstants.blueAllianceZone.contains(robotPose.getTranslation());
     } else {
       return FieldConstants.redAllianceZone.contains(robotPose.getTranslation());

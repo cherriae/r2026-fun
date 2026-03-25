@@ -58,22 +58,27 @@ public final class Constants {
     public static final int driverController = 0;
   }
 
+  public static int isSim(int id) {
+    if (Robot.isSimulation()) {
+      return id + 20;
+    }
+    return id;
+  }
+
   public static class FieldConstants {
     public static final AprilTagFieldLayout tagLayout =
         AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
-
 
     public static final Translation2d blueHub =
         new Translation2d(
             tagLayout.getTagPose(26).get().getX() + Units.inchesToMeters(47.0) / 2.0,
             tagLayout.getFieldWidth() / 2.0);
-            
+
     public static final Translation2d redHub =
         blueHub.rotateAround(
             new Translation2d(tagLayout.getFieldLength() / 2.0, tagLayout.getFieldWidth() / 2.0),
             Rotation2d.k180deg);
 
-    
     // update
     public static final Rectangle2d blueBumpZone = new Rectangle2d(Pose2d.kZero, 1, 1);
     public static final Rectangle2d redBumpZone = new Rectangle2d(Pose2d.kZero, 1, 1);
@@ -172,8 +177,8 @@ public final class Constants {
   }
 
   public class ShooterConstants {
-    public static final int shooterLeftFlywheelID = 1;
-    public static final int shooterRightFlywheelID = 2;
+    public static final int shooterLeftFlywheelID = isSim(1);
+    public static final int shooterRightFlywheelID = isSim(2);
 
     public static final Voltage flywheelkS = Volts.of(0.13262);
     public static final Per<VoltageUnit, AngularVelocityUnit> flywheelkV =
@@ -186,7 +191,8 @@ public final class Constants {
     public static final double RPSTolerance = 5;
 
     // shooter rps, feed rps, roller rps
-    public static final InterpolatingMatrixTreeMap<Double, N3, N1> hubPresets = new InterpolatingMatrixTreeMap<>();
+    public static final InterpolatingMatrixTreeMap<Double, N3, N1> hubPresets =
+        new InterpolatingMatrixTreeMap<>();
     public static final InterpolatingDoubleTreeMap hubTOF = new InterpolatingDoubleTreeMap();
 
     static {
@@ -207,8 +213,8 @@ public final class Constants {
   }
 
   public class HopperConstants {
-    public static int feedMotorID = 3;
-    public static int rollerMotorID = 4;
+    public static int feedMotorID = isSim(3);
+    public static int rollerMotorID = isSim(4);
 
     public static final Voltage feedKs = Volts.of(0.17);
     public static final Per<VoltageUnit, AngularVelocityUnit> feedKv =
@@ -227,8 +233,8 @@ public final class Constants {
   }
 
   public class IntakeConstants {
-    public static final int feedMotorID = 5;
-    public static final int pivotMotorID = 6;
+    public static final int feedMotorID = isSim(5);
+    public static final int pivotMotorID = isSim(6);
 
     public static final Voltage feedKs = Volts.of(0.34);
     public static final Per<VoltageUnit, AngularVelocityUnit> feedKv =
@@ -249,7 +255,7 @@ public final class Constants {
   }
 
   public class ClimberConstants {
-    public static final int ClimberMotorID = 7;
+    public static final int ClimberMotorID = isSim(7);
 
     public static final Voltage climberKg = Volts.of(0);
     public static final Voltage climberKs = Volts.of(0);
@@ -262,7 +268,7 @@ public final class Constants {
     public static final double climberGearRatio = 16;
   }
 
-    public static Matrix<N3, N1> vec3(double a, double b, double c) {
-        return new Matrix<N3, N1>(N3.instance, N1.instance, new double[] {a, b, c});
-    }
+  public static Matrix<N3, N1> vec3(double a, double b, double c) {
+    return new Matrix<N3, N1>(N3.instance, N1.instance, new double[] {a, b, c});
+  }
 }

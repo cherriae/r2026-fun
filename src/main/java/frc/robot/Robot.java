@@ -23,6 +23,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.util.ClassPreloader;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.IterativeRobotBase;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -43,9 +44,9 @@ import frc.robot.subsystems.IntakeFeed;
 import frc.robot.subsystems.IntakePivot;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
+import frc.robot.utils.FieldUtil;
 import frc.robot.utils.KernelLogMonitor;
 import frc.robot.utils.Shooting;
-
 import java.lang.reflect.Field;
 
 /**
@@ -79,7 +80,7 @@ public class Robot extends TimedRobot {
   private final Hopper _hopper = new Hopper();
 
   @Logged(name = "Shooting")
-  private final Shooting _shooting = new Shooting();
+  private final Shooting _shooting = new Shooting(true, true, _swerve.getPose());
 
   private final Autos _autos = new Autos(_swerve);
 
@@ -269,8 +270,11 @@ public class Robot extends TimedRobot {
       }
     }
 
-    _shooting.calculateShotHeading(_swerve.getPose(), ChassisSpeeds.fromFieldRelativeSpeeds(_swerve.getChassisSpeeds(), _swerve.getHeading()));
-    
+    _shooting.calculateShotHeading(
+        _swerve.getPose(),
+        ChassisSpeeds.fromFieldRelativeSpeeds(_swerve.getChassisSpeeds(), _swerve.getHeading()),
+        DriverStation.getAlliance().orElse(Alliance.Blue));
+
     DogLog.timeEnd("Timing/Robot/robotPeriodic()");
 
     DogLog.timeEnd("Timing/Robot/Full Loop");
