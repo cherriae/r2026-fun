@@ -1,12 +1,20 @@
 package frc.robot.utils;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.robot.Constants.FieldConstants;
+
+import java.lang.reflect.Field;
 import java.util.Optional;
+
+import dev.doglog.DogLog;
 
 public class FieldUtil {
   public static Optional<Alliance> alliance;
   public static double timeTolerance = 3;
+
+  private static double prevSwitchTime = 110;
 
   public FieldUtil() {
     System.out.println("[Field Util] Initialized");
@@ -21,7 +29,7 @@ public class FieldUtil {
     return DriverStation.getGameSpecificMessage();
   }
 
-  public boolean isAuton() {
+  public static boolean isAuton() {
     return DriverStation.isAutonomousEnabled();
   }
 
@@ -30,52 +38,58 @@ public class FieldUtil {
   }
 
   public boolean isHubActive() {
-    if (alliance.isEmpty() || !DriverStation.isTeleopEnabled()) {
-      return false; // we don't know the alliance so there no hub or not in teleop
-    }
-
-    if (isAuton() || getGameData().isEmpty()) {
-      return true; // in auton, the hub is always active
-    }
-
-    double matchTime = getMatchTime();
-    String gameData = getGameData();
-
-    boolean redWonAuton = false;
-    switch (gameData.charAt(0)) {
-      case 'R':
-        redWonAuton = true;
-      case 'B':
-        redWonAuton = false;
-      default:
-        redWonAuton = true;
-    }
-
-    boolean shift1Active =
-        switch (alliance.get()) {
-          case Red -> !redWonAuton;
-          case Blue -> redWonAuton;
-          default -> true;
-        };
-
-    if (matchTime > 130) {
-      // Transition shift, hub is active.
+    if (isAuton() || getMatchTime() <= 30) { // endgame
       return true;
-    } else if (matchTime > 105 - timeTolerance) {
-      // Shift 1
-      return shift1Active;
-    } else if (matchTime > 80 - timeTolerance) {
-      // Shift 2
-      return !shift1Active;
-    } else if (matchTime > 55 - timeTolerance) {
-      // Shift 3
-      return shift1Active;
-    } else if (matchTime > 30 - timeTolerance) {
-      // Shift 4
-      return !shift1Active;
+    }
+
+    String data = DriverStation.getGameSpecificMessage();
+    boolean active = false;
+
+    switch (alliance.get()) {
+      case Blue:
+        active = data.charAt(0) == 'B';
+        break;
+
+      case Red:
+        active = data.charAt(0) == 'R';
+        break;
+    }
+
+    if (prevSwitchTime - 25 >= DriverStation.getMatchTime()) {
+      active = !active;
+      prevSwitchTime = DriverStation.getMatchTime();
+    }
+
+    return active;
+  }
+
+  /** Whether the supplied robot pose is in the bump zone(s). */
+  public static boolean inBumpZone(Pose2d robotPose) {
+    if (FieldConstants.blueBumpZone.contains(robotPose.getTranslation())
+        || FieldConstants.redBumpZone.contains(robotPose.getTranslation())) {
+      return true;
+    }
+
+    return false;
+  }
+
+  public static boolean inAllianceZone(Pose2d robotPose) {
+    if (alliance.get() == Alliance.Blue) {
+      return FieldConstants.blueAllianceZone.contains(robotPose.getTranslation());
     } else {
-      // End game, hub always active.
-      return true;
+      return FieldConstants.redAllianceZone.contains(robotPose.getTranslation());
     }
+  }
+
+  public static boolean inNeutralZone(Pose2d robotPose) {
+    return FieldConstants.neutralZone.contains(robotPose.getTranslation());
+  }
+
+  public void log(Pose2d robotPose) {
+    DogLog.log("FieldUtil/Alliance", alliance.get().toString());
+    DogLog.log("FieldUtil/Is Hub Active", isHubActive());
+    DogLog.log("FieldUtil/In Bump Zone", inBumpZone(robotPose));
+    DogLog.log("FieldUtil/In Alliance Zone", inAllianceZone(robotPose));
+    DogLog.log("FieldUtil/In Neutral Zone", inNeutralZone(robotPose));
   }
 }

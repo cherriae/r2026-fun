@@ -30,6 +30,24 @@ public class IntakeFeed extends AdvancedSubsystem {
     config.Slot0.kP = Constants.IntakeConstants.feedKp.in(Volts.per(RotationsPerSecond));
     config.Feedback.SensorToMechanismRatio = Constants.IntakeConstants.feedGearRatio;
 
+    // optimize busUtil
+    CTREUtil.attempt(() -> _feedMotor.optimizeBusUtilization(), _feedMotor);
+    CTREUtil.attempt(
+        () ->
+            StatusSignal.setUpdateFrequencyForAll(
+                200,
+                feedVelocityGetter,
+                _feedMotor.getVelocity(),
+                _feedMotor.getSupplyCurrent(),
+                _feedMotor.getStatorCurrent()),
+        _feedMotor);
+
+    // current limits
+    config.CurrentLimits.SupplyCurrentLimit = 60;
+    config.CurrentLimits.StatorCurrentLimit = 100;
+    config.CurrentLimits.SupplyCurrentLimitEnable = true;
+    config.CurrentLimits.StatorCurrentLimitEnable = true;
+
     CTREUtil.attempt(() -> _feedMotor.getConfigurator().apply(config), _feedMotor);
     FaultLogger.register(_feedMotor);
 
@@ -41,11 +59,11 @@ public class IntakeFeed extends AdvancedSubsystem {
   }
 
   public Command stop() {
-    return run(() -> _feedMotor.setControl(feedVelocity.withVelocity(0)));
+    return run(() -> _feedMotor.setControl(feedVelocity.withVelocity(0))).withName("Stop");
   }
 
   public Command feed(AngularVelocity velocity) {
-    return run(() -> _feedMotor.setControl(feedVelocity.withVelocity(velocity)));
+    return run(() -> _feedMotor.setControl(feedVelocity.withVelocity(velocity))).withName("Feed");
   }
 
   @Logged

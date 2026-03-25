@@ -9,11 +9,18 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.InterpolatingMatrixTreeMap;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.AngleUnit;
@@ -54,6 +61,15 @@ public final class Constants {
   public static class FieldConstants {
     public static final AprilTagFieldLayout tagLayout =
         AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+
+    
+    public static final Rectangle2d blueBumpZone = new Rectangle2d(Pose2d.kZero, 1, 1);
+    public static final Rectangle2d redBumpZone = new Rectangle2d(Pose2d.kZero, 1, 1);
+
+    public static final Rectangle2d blueAllianceZone = new Rectangle2d(Pose2d.kZero, 1, 1);
+    public static final Rectangle2d redAllianceZone = new Rectangle2d(Pose2d.kZero, 1, 1);
+
+    public static final Rectangle2d neutralZone = new Rectangle2d(Pose2d.kZero, 1, 1);
 
     // uncomment if using the test tag layout
     // public static final AprilTagFieldLayout tagLayout;
@@ -154,6 +170,16 @@ public final class Constants {
         Volts.per(RotationsPerSecond).ofNative(0.2);
 
     public static final double shooterGearRatio = 1.2;
+
+    public static final double RPSTolerance = 5;
+
+    // shooter rps, feed rps, roller rps
+    public static final InterpolatingMatrixTreeMap<Double, N3, N1> hubPresets = new InterpolatingMatrixTreeMap<>();
+    public static final InterpolatingDoubleTreeMap hubTOF = new InterpolatingDoubleTreeMap();
+
+    static {
+
+    }
   }
 
   public class HopperConstants {
@@ -211,4 +237,9 @@ public final class Constants {
 
     public static final double climberGearRatio = 16;
   }
+
+public static Matrix<N3, N1> vec3(int i, int j, int k) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'vec3'");
+}
 }
