@@ -154,7 +154,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
   @Logged(name = "Ignore Vision Estimates")
   private boolean _ignoreVisionEstimates = false;
 
-  @Logged( name = "Distance To Hub" )
+  @Logged(name = "Distance To Hub")
   public Distance distanceToHub = Meters.of(0);
 
   private final List<VisionPoseEstimator> _cameras = List.of();

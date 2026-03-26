@@ -45,22 +45,26 @@ public class Shooting {
   public Shooting() {}
 
   public void updateIsValid(
-    boolean shooterReady,
-    boolean headingWithinTolerance, // fix later with actual heading check
-    Pose2d robotPose
-  ) {
+      boolean shooterReady,
+      boolean headingWithinTolerance, // fix later with actual heading check
+      Pose2d robotPose) {
     isValid =
         shooterReady
-        && headingWithinTolerance
-        && FieldUtil.inAllianceZone(robotPose)
-        && !convergenceFailed
-        && inBound;
+            && headingWithinTolerance
+            && FieldUtil.inAllianceZone(robotPose)
+            && !convergenceFailed
+            && inBound;
   }
 
   // newton's method to find the heading to shoot at to hit the target
-  public void calculateShotHeading(Pose2d robotPose, ChassisSpeeds robotSpeeds, Alliance alliance, boolean shooterReady, boolean headingWithinTolerance) {
+  public void calculateShotHeading(
+      Pose2d robotPose,
+      ChassisSpeeds robotSpeeds,
+      Alliance alliance,
+      boolean shooterReady,
+      boolean headingWithinTolerance) {
     if (alliance == null || !FieldUtil.inAllianceZone(robotPose)) {
-        return;
+      return;
     }
 
     setTarget(
@@ -92,20 +96,23 @@ public class Shooting {
           Constants.ShooterConstants.hubTOF.get(
               robotTranslationToTarget.getNorm()); // interpolation of the tof
       double dT_dt = 0;
-    
-      if (robotTranslationToTarget.getNorm() == MathUtil.clamp(robotTranslationToTarget.getNorm(), 1, 5.7)) {
+
+      if (robotTranslationToTarget.getNorm()
+          == MathUtil.clamp(
+              robotTranslationToTarget.getNorm(),
+              Constants.ShooterConstants.minHubDistance,
+              Constants.ShooterConstants.maxHubDistance)) {
         dT_dt =
             -robotTranslationToTarget.dot(robotVelocity)
                 / (Constants.ShooterConstants.horizontolProjectileVelocity.in(MetersPerSecond)
-                    * robotTranslationToTarget
-                        .getNorm()); // need to fix when distance is outside table bounds
+                    * robotTranslationToTarget.getNorm());
         // pos = moving away from target
         // neg = moving closer to target
-        // -(vector from robot to target dot velocity of robot) / distance to target 
+        // -(vector from robot to target dot velocity of robot) / distance to target
       }
 
       double error = initialGuess - tof; // guess - interpolation
-      double dError_dt = 1 - error/dT_dt;
+      double dError_dt = 1 - error / dT_dt;
 
       if (Math.abs(error) < errorTolerance) {
         couplingDegrees =
@@ -115,7 +122,9 @@ public class Shooting {
                         Math.abs(
                             robotTranslationToTarget.dot(robotVelocity)
                                 / (robotTranslationToTarget.getNorm()
-                                    * robotVelocity.getNorm()))))); // this is for checking if the robot and projectile vectors overlap too much
+                                    * robotVelocity
+                                        .getNorm()))))); // this is for checking if the robot and
+        // projectile vectors overlap too much
 
         setVirtualTarget(target.getTranslation().minus(robotVelocity.times(initialGuess)));
         double distanceToVirtualTarget =
@@ -134,7 +143,9 @@ public class Shooting {
         newtonIterations = i + 1;
         convergenceFailed = false;
 
-        inBound = 1 < distanceToVirtualTarget && distanceToVirtualTarget < 5.7;
+        inBound =
+            Constants.ShooterConstants.minHubDistance < distanceToVirtualTarget
+                && distanceToVirtualTarget < Constants.ShooterConstants.maxHubDistance;
 
         break;
       }
@@ -142,7 +153,7 @@ public class Shooting {
       initialGuess = initialGuess - (error / dError_dt); // update guess
     }
     if (newtonIterations == maxIterations) {
-        convergenceFailed = true;
+      convergenceFailed = true;
     }
 
     updateIsValid(shooterReady, headingWithinTolerance, robotPose);

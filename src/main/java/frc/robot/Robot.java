@@ -42,6 +42,7 @@ import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.Hopper;
 import frc.robot.subsystems.IntakeFeed;
 import frc.robot.subsystems.IntakePivot;
+import frc.robot.subsystems.LED;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 import frc.robot.utils.FieldUtil;
@@ -83,6 +84,8 @@ public class Robot extends TimedRobot {
   private final Shooting _shooting = new Shooting();
 
   private final FieldUtil _fieldUtil = new FieldUtil();
+
+  private final LED _led = new LED(Constants.ledPort, Constants.LEDLength);
 
   private final Autos _autos = new Autos(_swerve);
 
@@ -276,7 +279,9 @@ public class Robot extends TimedRobot {
     _shooting.calculateShotHeading(
         _swerve.getPose(),
         ChassisSpeeds.fromFieldRelativeSpeeds(_swerve.getChassisSpeeds(), _swerve.getHeading()),
-        DriverStation.getAlliance().orElse(Alliance.Blue), true, true);
+        DriverStation.getAlliance().orElse(Alliance.Blue),
+        true,
+        true);
 
     DogLog.timeEnd("Timing/Robot/robotPeriodic()");
 

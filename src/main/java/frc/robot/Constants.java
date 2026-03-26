@@ -11,7 +11,6 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.InterpolatingMatrixTreeMap;
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -52,6 +51,8 @@ public final class Constants {
   public static final Frequency simNotifierFrequency = Hertz.of(200);
   public static final CANBus subsystemsCANBus = new CANBus("subsystems");
   public static final CANBus swerveCANBus = new CANBus("canivore");
+  public static final int ledPort = 9;
+  public static final int LEDLength = 60;
 
   public static final boolean isProfiling = false;
 
@@ -101,10 +102,18 @@ public final class Constants {
                 FIELD_LENTH.minus(Inches.of(204.48).plus(bumpZoneTolereance)),
                 FIELD_WIDTH.minus(Inches.of(258.65))));
 
-    public static final Rectangle2d blueAllianceZone = new Rectangle2d(new Translation2d(0,0), new Translation2d(Inches.of(182.11), Inches.of(317.68)));
-    public static final Rectangle2d redAllianceZone = new Rectangle2d(new Translation2d(Inches.of(469.11), Inches.of(317.68)), new Translation2d(Inches.of(651.22), Inches.of(0)));
+    public static final Rectangle2d blueAllianceZone =
+        new Rectangle2d(
+            new Translation2d(0, 0), new Translation2d(Inches.of(182.11), Inches.of(317.68)));
+    public static final Rectangle2d redAllianceZone =
+        new Rectangle2d(
+            new Translation2d(Inches.of(469.11), Inches.of(317.68)),
+            new Translation2d(Inches.of(651.22), Inches.of(0)));
 
-    public static final Rectangle2d neutralZone = new Rectangle2d(new Translation2d(Inches.of(182.11), Inches.of(317.68)), new Translation2d(Inches.of(469.11), Inches.of(0)));
+    public static final Rectangle2d neutralZone =
+        new Rectangle2d(
+            new Translation2d(Inches.of(182.11), Inches.of(317.68)),
+            new Translation2d(Inches.of(469.11), Inches.of(0)));
 
     // uncomment if using the test tag layout
     // public static final AprilTagFieldLayout tagLayout;
@@ -212,6 +221,9 @@ public final class Constants {
     public static final InterpolatingMatrixTreeMap<Double, N3, N1> hubPresets =
         new InterpolatingMatrixTreeMap<>();
     public static final InterpolatingDoubleTreeMap hubTOF = new InterpolatingDoubleTreeMap();
+
+    public static final double maxHubDistance = 5.252;
+    public static final double minHubDistance = 1.89;
 
     static {
       hubPresets.put(1.89, vec3(38, 50, 40));
