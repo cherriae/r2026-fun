@@ -34,6 +34,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.lib.FaultLogger;
 import frc.lib.FaultsTable.FaultType;
 import frc.lib.InputStream;
+import frc.robot.Constants.IntakeConstants;
 import frc.robot.Constants.Ports;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.Autos;
@@ -205,7 +206,7 @@ public class Robot extends TimedRobot {
 
   private void configureDriverBindings() {
 
-        InputStream baseVelX =
+    InputStream baseVelX =
         InputStream.of(_driverController::getLeftY).deadband(0.02, 1).negate().signedPow(2);
 
     InputStream baseVelY =
@@ -213,7 +214,7 @@ public class Robot extends TimedRobot {
 
     InputStream baseVelOmega =
         InputStream.of(_driverController::getRightX).deadband(0.02, 1).negate().signedPow(2);
-        
+
     _swerve.setDefaultCommand(
         _swerve
             .drive(
@@ -239,7 +240,7 @@ public class Robot extends TimedRobot {
     _driverController.y().onTrue(_swerve.resetHeading());
 
     // intake feed
-    _driverController.leftBumper().whileTrue(_intakeFeed.feed(null)); // todo
+    _driverController.leftBumper().whileTrue(_intakeFeed.feed(IntakeConstants.feedSpeed)); // todo
 
     // intake pivot
     _driverController.rightBumper().whileTrue(_intakePivot.pivotLower());
@@ -253,7 +254,6 @@ public class Robot extends TimedRobot {
                     SwerveConstants.driverTranslationalShootingVelocity.in(MetersPerSecond)),
                 baseVelY.scale(
                     SwerveConstants.driverTranslationalShootingVelocity.in(MetersPerSecond))));
-
   }
 
   /**
@@ -303,7 +303,7 @@ public class Robot extends TimedRobot {
 
     _fieldUtil.log(_swerve.getPose());
     _shooting.calculateShotHeading(
-        _swerve.getPose(),
+        _swerve::getPose,
         ChassisSpeeds.fromFieldRelativeSpeeds(_swerve.getChassisSpeeds(), _swerve.getHeading()),
         DriverStation.getAlliance().orElse(Alliance.Blue),
         true,

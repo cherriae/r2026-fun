@@ -53,10 +53,9 @@ public class Superstructure {
 
   public Command shoot(InputStream velX, InputStream velY) {
     return parallel(
-      _shooter.shoot(null),
-      _hopper.feed(null),
-      _intakePivot.pivotRaise(),
-      _swerve.driveFacing(velX, velY, () -> _shooting.getShotHeading())
-    );
+        _shooter.shoot(() -> _shooting.getFlywheelSpeed()),
+        _hopper.feed(() -> _shooting.getRollerSpeed(), () -> _shooting.getFloorSpeed()),
+        _intakePivot.pivotRaise(),
+        _swerve.driveFacing(velX, velY, () -> _shooting.getShotHeading()));
   }
 }

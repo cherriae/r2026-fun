@@ -1,10 +1,12 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Hertz;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.Follower;
@@ -14,11 +16,17 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import dev.doglog.DogLog;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.AdvancedSubsystem;
 import frc.lib.CTREUtil;
 import frc.robot.Constants;
+import java.util.function.Supplier;
 
 public class Shooter extends AdvancedSubsystem {
   public static final TalonFX leftMotor =
@@ -37,6 +45,10 @@ public class Shooter extends AdvancedSubsystem {
 
   // public static final StatusSignal<AngularVelocity> rightVelocitySignal =
   // rightMotor.getVelocity();
+
+  private double _lastSimTime;
+  private Notifier _simNotifier;
+  private FlywheelSim _flywheelSim;
 
   public Shooter() {
     var leftConfig = new TalonFXConfiguration();
@@ -95,7 +107,54 @@ public class Shooter extends AdvancedSubsystem {
         new Follower(
             Constants.ShooterConstants.shooterRightFlywheelID, MotorAlignmentValue.Opposed));
 
+    if (frc.robot.Robot.isSimulation()) {
+      _flywheelSim =
+          new FlywheelSim(
+              LinearSystemId.createFlywheelSystem(
+                  Constants.MotorConstants.krakenX44,
+                  0.01, // MOI
+                  Constants.ShooterConstants.shooterGearRatio),
+              Constants.MotorConstants.krakenX44);
+
+      startSimThread();
+    }
+
     setDefaultCommand(idle());
+  }
+
+  private void startSimThread() {
+    _lastSimTime = Utils.getCurrentTimeSeconds();
+
+    _simNotifier =
+        new Notifier(
+            () -> {
+              final double currentTime = Utils.getCurrentTimeSeconds();
+              final double deltaTime = currentTime - _lastSimTime;
+              final double batteryVoltage =
+                  RobotController.getBatteryVoltage();
+
+              var leftSim = leftMotor.getSimState();
+              var rightSim = rightMotor.getSimState();
+
+              leftSim.setSupplyVoltage(batteryVoltage);
+              rightSim.setSupplyVoltage(batteryVoltage);
+
+              // Flywheel takes main motor's voltage
+              _flywheelSim.setInputVoltage(leftSim.getMotorVoltageMeasure().in(Volts));
+              _flywheelSim.update(deltaTime);
+
+              double mechanismRPS = _flywheelSim.getAngularVelocityRPM() / 60.0;
+
+              leftSim.setRotorVelocity(mechanismRPS * Constants.ShooterConstants.shooterGearRatio);
+              rightSim.setRotorVelocity(
+                  mechanismRPS * Constants.ShooterConstants.shooterGearRatio); // follower opposed
+
+              _lastSimTime = currentTime;
+            });
+
+    _simNotifier.setName("Shooter Sim Thread");
+    _simNotifier.startPeriodic(
+        1 / Constants.simUpdateFrequency.in(Hertz));
   }
 
   public Command idle() {
@@ -105,16 +164,16 @@ public class Shooter extends AdvancedSubsystem {
   }
 
   public void setFlywheelSpeed(AngularVelocity velocity) {
-    double errorRPS = flywheelGetter.getValue().in(RotationsPerSecond);
+    double current = flywheelGetter.getValue().in(RotationsPerSecond);
+    double target = velocity.in(RotationsPerSecond);
+    double error = target - current;
 
-    if (Math.abs(errorRPS) < Constants.ShooterConstants.RPSTolerance.in(RotationsPerSecond)) {
+    if (Math.abs(error) < Constants.ShooterConstants.RPSTolerance.in(RotationsPerSecond)) {
       inTolerance = true;
     } else {
       inTolerance = false;
     }
-
-    if (Math.abs(errorRPS)
-        > Constants.ShooterConstants.BangBangRPSTolerane.in(RotationsPerSecond)) {
+    if (Math.abs(error) > Constants.ShooterConstants.BangBangRPSTolerane.in(RotationsPerSecond)) {
       leftMotor.setControl(dutyCycle.withOutput(1)); // 100% power if we're outside the tolerance
     } else {
       leftMotor.setControl(
@@ -122,14 +181,19 @@ public class Shooter extends AdvancedSubsystem {
     }
   }
 
-  public Command shoot(AngularVelocity velocity) {
-    return run(() -> setFlywheelSpeed(velocity)).withName("Shoot");
+  public Command shoot(Supplier<AngularVelocity> velocitySupplier) {
+    return run(() -> setFlywheelSpeed(velocitySupplier.get())).withName("Shoot");
   }
 
   public Command spit() {
     return run(() ->
             leftMotor.setControl(shootVelocity.withVelocity(Constants.ShooterConstants.spitRPS)))
         .withName("Spit");
+  }
+
+  @Logged(name = "Flywheel Speed")
+  public AngularVelocity getFlywheelSpeed() {
+    return flywheelGetter.refresh().getValue();
   }
 
   @Override
@@ -143,5 +207,8 @@ public class Shooter extends AdvancedSubsystem {
   public void close() {
     leftMotor.close();
     rightMotor.close();
+    if (_simNotifier != null) {
+      _simNotifier.close();
+    }
   }
 }

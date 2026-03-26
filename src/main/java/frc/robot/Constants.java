@@ -185,7 +185,7 @@ public final class Constants {
     public static final LinearVelocity driverTranslationalVelocity = MetersPerSecond.of(4);
     public static final AngularVelocity driverAngularVelocity = RadiansPerSecond.of(Math.PI);
 
-        public static final LinearVelocity driverTranslationalShootingVelocity =
+    public static final LinearVelocity driverTranslationalShootingVelocity =
         MetersPerSecond.of(1.5);
 
     public static final LinearVelocity profileTranslationalVelocity = MetersPerSecond.of(1);
@@ -195,7 +195,7 @@ public final class Constants {
     public static final AngularVelocity profileAngularVelocity = RadiansPerSecond.of(Math.PI);
     public static final AngularAcceleration profileAngularAcceleration =
         RadiansPerSecondPerSecond.of(Math.PI * 2);
-    
+
     public static final Per<LinearVelocityUnit, DistanceUnit> poseTranslationalkP =
         MetersPerSecond.per(Meter).ofNative(2);
     public static final Per<LinearVelocityUnit, LinearVelocityUnit> poseTranslationalkD =
