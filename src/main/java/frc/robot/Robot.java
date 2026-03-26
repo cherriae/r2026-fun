@@ -150,8 +150,15 @@ public class Robot extends TimedRobot {
 
     AutoChooser chooser = new AutoChooser();
 
-    chooser.addRoutine("Example", _autos::example);
-
+    chooser.addRoutine(
+        "Peter",
+        () -> _autos.peter(
+            _superstructure.shoot(InputStream.of(() -> 1), InputStream.of(() -> 1)),
+            _superstructure.intake(),
+            _intakePivot.raise()
+        )
+    );
+    
     SmartDashboard.putData("Auto Chooser", chooser);
 
     autonomous().whileTrue(chooser.selectedCommandScheduler());
