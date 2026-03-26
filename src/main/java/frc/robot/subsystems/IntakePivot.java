@@ -147,16 +147,9 @@ public class IntakePivot extends AdvancedSubsystem {
               _pivotSim.update(deltaTime);
 
               pivotMotorSimulationState.setRawRotorPosition(
-                  _pivotSim
-                      .getAngularPosition()
-                      .div(2 * Math.PI)
-                      .times(IntakeConstants.pivotGearRatio));
+                  _pivotSim.getAngularPositionRotations());
 
-              pivotMotorSimulationState.setRotorVelocity(
-                  _pivotSim
-                      .getAngularVelocity()
-                      .div(2 * Math.PI)
-                      .times(IntakeConstants.pivotGearRatio));
+              pivotMotorSimulationState.setRotorVelocity(_pivotSim.getAngularVelocityRadPerSec());
 
               _lastSimTime = currentTime;
             });
