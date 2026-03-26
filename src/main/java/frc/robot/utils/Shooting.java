@@ -4,8 +4,6 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
-import java.util.function.Supplier;
-
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
@@ -20,6 +18,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.MutAngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants;
+import java.util.function.Supplier;
 
 @Logged
 public class Shooting {
@@ -147,7 +146,8 @@ public class Shooting {
         double distanceToVirtualTarget =
             virtualTarget
                 .getTranslation()
-                .getDistance(robotPose.get().getTranslation()); // Get the distance to v target from robot
+                .getDistance(
+                    robotPose.get().getTranslation()); // Get the distance to v target from robot
 
         setPreset(
             Constants.ShooterConstants.hubPresets.get(

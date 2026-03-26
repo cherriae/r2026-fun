@@ -52,7 +52,7 @@ public class LED extends AdvancedSubsystem {
         () -> {
           LEDPattern pattern =
               LEDPattern.gradient(GradientType.kContinuous, Color.kGreen, Color.kLime)
-          .blink(Seconds.of(0.5));
+                  .blink(Seconds.of(0.5));
           pattern.applyTo(buffer);
         });
   }
@@ -62,9 +62,8 @@ public class LED extends AdvancedSubsystem {
     return run(
         () -> {
           LEDPattern pattern =
-              LEDPattern.gradient(
-                GradientType.kContinuous, Color.kYellow, Color.kGold
-              ).blink(Seconds.of(0.3));
+              LEDPattern.gradient(GradientType.kContinuous, Color.kYellow, Color.kGold)
+                  .blink(Seconds.of(0.3));
 
           pattern.applyTo(buffer);
         });
@@ -75,9 +74,8 @@ public class LED extends AdvancedSubsystem {
     return run(
         () -> {
           LEDPattern pattern =
-              LEDPattern.gradient(
-                GradientType.kContinuous, Color.kPurple, Color.kMagenta
-              ).blink(Seconds.of(0.1));
+              LEDPattern.gradient(GradientType.kContinuous, Color.kPurple, Color.kMagenta)
+                  .blink(Seconds.of(0.1));
           pattern.applyTo(buffer);
         });
   }

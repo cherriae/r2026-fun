@@ -34,7 +34,6 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.lib.FaultLogger;
 import frc.lib.FaultsTable.FaultType;
 import frc.lib.InputStream;
-import frc.robot.Constants.IntakeConstants;
 import frc.robot.Constants.Ports;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.Autos;
@@ -239,11 +238,8 @@ public class Robot extends TimedRobot {
     _driverController.a().onTrue(_swerve.toggleFieldOriented());
     _driverController.y().onTrue(_swerve.resetHeading());
 
-    // intake feed
-    _driverController.leftBumper().whileTrue(_intakeFeed.feed(IntakeConstants.feedSpeed)); // todo
-
-    // intake pivot
-    _driverController.rightBumper().whileTrue(_intakePivot.pivotLower());
+    _driverController.leftBumper().whileTrue(_superstructure.intake());
+    _driverController.rightBumper().whileTrue(_intakePivot.raise());
 
     // hopper feed and rollers and shoot when ready
     _driverController

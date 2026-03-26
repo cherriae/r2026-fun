@@ -124,8 +124,7 @@ public class Hopper extends AdvancedSubsystem {
             () -> {
               final double currentTime = Utils.getCurrentTimeSeconds();
               final double deltaTime = currentTime - _lastSimTime;
-              final double batteryVoltage =
-                  RobotController.getBatteryVoltage();
+              final double batteryVoltage = RobotController.getBatteryVoltage();
 
               var feedMotorSimulationState = _feedMotor.getSimState();
               var rollerMotorSimulationState = _rollerMotor.getSimState();
@@ -163,8 +162,7 @@ public class Hopper extends AdvancedSubsystem {
             });
 
     _simNotifier.setName("Hopper Sim Thread");
-    _simNotifier.startPeriodic(
-        1 / Constants.simUpdateFrequency.in(Hertz));
+    _simNotifier.startPeriodic(1 / Constants.simUpdateFrequency.in(Hertz));
   }
 
   public void setFeedVelocity(AngularVelocity velocity) {

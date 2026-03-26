@@ -292,7 +292,7 @@ public final class Constants {
     public static final Voltage pivotKg = Volts.of(0);
     public static final Voltage pivotKs = Volts.of(0);
     public static final Per<VoltageUnit, AngularVelocityUnit> pivotKp =
-        Volts.per(RotationsPerSecond).ofNative(0);
+        Volts.per(RotationsPerSecond).ofNative(20);
     public static final Per<VoltageUnit, AngularVelocityUnit> pivotKv =
         Volts.per(RotationsPerSecond).ofNative(1);
     public static final Per<VoltageUnit, AngularAccelerationUnit> pivotKa =
@@ -309,6 +309,8 @@ public final class Constants {
     public static final Angle pivotSoftLimitReverse = Rotations.of(0.7);
 
     public static final Distance intakeLength = Inches.of(14);
+
+    public static final AngularVelocity intakeFeedVelocity = RotationsPerSecond.of(30);
   }
 
   public class ClimberConstants {

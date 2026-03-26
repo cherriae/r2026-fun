@@ -36,7 +36,7 @@ public class IntakePivot extends AdvancedSubsystem {
   public static final TalonFX pivotMotor =
       new TalonFX(Constants.IntakeConstants.pivotMotorID, Constants.subsystemsCANBus);
   public static final PositionVoltage positionVoltage = new PositionVoltage(0);
-  public static final StatusSignal<Angle> pivotAngleGetter = pivotMotor.getPosition();
+  public static final StatusSignal<Angle> pivotPositionGetter = pivotMotor.getPosition();
 
   private DCMotorSim _pivotSim;
 
@@ -83,7 +83,7 @@ public class IntakePivot extends AdvancedSubsystem {
         () ->
             BaseStatusSignal.setUpdateFrequencyForAll(
                 100,
-                pivotAngleGetter,
+                pivotPositionGetter,
                 pivotMotor.getPosition(),
                 pivotMotor.getVelocity(),
                 pivotMotor.getAcceleration(),
@@ -102,7 +102,7 @@ public class IntakePivot extends AdvancedSubsystem {
       var simConfig = new TalonFXConfiguration();
       pivotMotor.getConfigurator().refresh(simConfig);
 
-      simConfig.MotorOutput.withInverted(InvertedValue.CounterClockwise_Positive);
+      simConfig.MotorOutput.withInverted(InvertedValue.Clockwise_Positive);
 
       simConfig.Slot0.kS = 0;
       simConfig.Slot0.kG = 0;
@@ -116,13 +116,12 @@ public class IntakePivot extends AdvancedSubsystem {
                   IntakeConstants.pivotKa.in(Volts.per(RadiansPerSecondPerSecond))),
               MotorConstants.krakenX44);
 
-      _pivotSim.setAngle(Constants.IntakeConstants.pivotRaised.in(Radians));
-      pivotAngleGetter.setUpdateFrequency(Hertz.of(1000));
+      _pivotSim.setAngle(Constants.IntakeConstants.pivotLowered.in(Radians));
 
       startSimThread();
     }
 
-    setDefaultCommand(pivotLower());
+    setDefaultCommand(lower());
   }
 
   private void startSimThread() {
@@ -141,15 +140,23 @@ public class IntakePivot extends AdvancedSubsystem {
               pivotMotorSimulationState.setSupplyVoltage(batteryVoltage);
 
               _pivotSim.setInputVoltage(
-                  pivotMotorSimulationState.getMotorVoltageMeasure().in(Volts));
+                  pivotMotorSimulationState
+                      .getMotorVoltageMeasure()
+                      .in(Volts)); // doesn't work when gains are 0
 
               _pivotSim.update(deltaTime);
 
               pivotMotorSimulationState.setRawRotorPosition(
-                  _pivotSim.getAngularPosition().times(IntakeConstants.pivotGearRatio));
+                  _pivotSim
+                      .getAngularPosition()
+                      .div(2 * Math.PI)
+                      .times(IntakeConstants.pivotGearRatio));
 
               pivotMotorSimulationState.setRotorVelocity(
-                  _pivotSim.getAngularVelocity().times(IntakeConstants.pivotGearRatio));
+                  _pivotSim
+                      .getAngularVelocity()
+                      .div(2 * Math.PI)
+                      .times(IntakeConstants.pivotGearRatio));
 
               _lastSimTime = currentTime;
             });
@@ -170,13 +177,14 @@ public class IntakePivot extends AdvancedSubsystem {
 
   @Logged(name = "Angle")
   public double getAngle() {
-    return pivotAngleGetter.refresh().getValue().in(Radians);
+    return pivotPositionGetter.refresh().getValue().in(Radians);
   }
 
-  public Command pivotLower() {
+  public Command lower() {
     return run(() -> {
-          if (inBumpZoneBooleanSupplier.getAsBoolean()) {
-            pivotTuck();
+          if (inBumpZoneBooleanSupplier.getAsBoolean() == true) {
+            pivotLowered = false;
+            pivotMotor.setControl(positionVoltage.withPosition(IntakeConstants.pivotTuck));
           } else {
             pivotLowered = true;
             pivotMotor.setControl(positionVoltage.withPosition(IntakeConstants.pivotLowered));
@@ -185,7 +193,7 @@ public class IntakePivot extends AdvancedSubsystem {
         .withName("Lower");
   }
 
-  public Command pivotRaise() {
+  public Command raise() {
     pivotLowered = false;
     return run(() ->
             pivotMotor.setControl(
@@ -193,7 +201,7 @@ public class IntakePivot extends AdvancedSubsystem {
         .withName("Raise");
   }
 
-  public Command pivotTuck() {
+  public Command tuck() {
     pivotLowered = false;
     return run(() ->
             pivotMotor.setControl(

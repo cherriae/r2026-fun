@@ -8,6 +8,7 @@ import static edu.wpi.first.wpilibj2.command.Commands.parallel;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.InputStream;
+import frc.robot.Constants.IntakeConstants;
 import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.Hopper;
 import frc.robot.subsystems.IntakeFeed;
@@ -53,9 +54,15 @@ public class Superstructure {
 
   public Command shoot(InputStream velX, InputStream velY) {
     return parallel(
-        _shooter.shoot(() -> _shooting.getFlywheelSpeed()),
-        _hopper.feed(() -> _shooting.getRollerSpeed(), () -> _shooting.getFloorSpeed()),
-        _intakePivot.pivotRaise(),
-        _swerve.driveFacing(velX, velY, () -> _shooting.getShotHeading()));
+            _shooter.shoot(() -> _shooting.getFlywheelSpeed()),
+            _hopper.feed(() -> _shooting.getRollerSpeed(), () -> _shooting.getFloorSpeed()),
+            _intakePivot.raise(),
+            _swerve.driveFacing(velX, velY, () -> _shooting.getShotHeading()))
+        .withName("Shoot");
+  }
+
+  public Command intake() {
+    return parallel(_intakePivot.lower(), _intakeFeed.feed(IntakeConstants.intakeFeedVelocity))
+        .withName("Intake");
   }
 }

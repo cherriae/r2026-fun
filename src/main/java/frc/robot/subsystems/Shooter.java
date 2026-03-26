@@ -130,8 +130,7 @@ public class Shooter extends AdvancedSubsystem {
             () -> {
               final double currentTime = Utils.getCurrentTimeSeconds();
               final double deltaTime = currentTime - _lastSimTime;
-              final double batteryVoltage =
-                  RobotController.getBatteryVoltage();
+              final double batteryVoltage = RobotController.getBatteryVoltage();
 
               var leftSim = leftMotor.getSimState();
               var rightSim = rightMotor.getSimState();
@@ -153,8 +152,7 @@ public class Shooter extends AdvancedSubsystem {
             });
 
     _simNotifier.setName("Shooter Sim Thread");
-    _simNotifier.startPeriodic(
-        1 / Constants.simUpdateFrequency.in(Hertz));
+    _simNotifier.startPeriodic(1 / Constants.simUpdateFrequency.in(Hertz));
   }
 
   public Command idle() {
