@@ -7,6 +7,8 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.function.BooleanSupplier;
+
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.Utils;
@@ -38,6 +40,7 @@ import frc.lib.CTREUtil;
 import frc.lib.FaultLogger;
 import frc.robot.Constants;
 import frc.robot.Constants.IntakeConstants;
+import frc.robot.Constants.MotorConstants;
 import frc.robot.Robot;
 
 public class IntakePivot extends AdvancedSubsystem {
@@ -50,13 +53,19 @@ public class IntakePivot extends AdvancedSubsystem {
   private final MechanismRoot2d _root = _mech.getRoot("pivot", 0.5, 1);
   private final MechanismLigament2d _pivot = _root.append(new MechanismLigament2d("pivot", 0.5, 0, 3, new Color8Bit(Color.kAliceBlue)));
 
-  private SingleJointedArmSim _actuatorSim;
+  private SingleJointedArmSim _pivotSim;
 
   private double _lastSimTime;
 
   private Notifier _simNotifier;
 
-  public IntakePivot() {
+  private BooleanSupplier inBumpZoneBooleanSupplier = () -> false;
+
+  private boolean pivotLowered = true;
+
+  public IntakePivot(BooleanSupplier _inBumpZoneBooleanSupplier) {
+    inBumpZoneBooleanSupplier = _inBumpZoneBooleanSupplier;
+    
     var config = new TalonFXConfiguration();
     config.MotorOutput.NeutralMode = com.ctre.phoenix6.signals.NeutralModeValue.Brake;
     config.Slot0.kS = Constants.IntakeConstants.pivotKs.in(Volts);
@@ -66,8 +75,8 @@ public class IntakePivot extends AdvancedSubsystem {
     config.Slot0.kA = Constants.IntakeConstants.pivotKa.in(Volts.per(RadiansPerSecondPerSecond));
     config.Feedback.SensorToMechanismRatio = Constants.IntakeConstants.pivotGearRatio;
 
-    config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Constants.IntakeConstants.pivotSoftLimitForward.in(Radians);
-    config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = Constants.IntakeConstants.pivotSoftLimitReverse.in(Radians);
+    config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Constants.IntakeConstants.pivotSoftLimitForward.in(Rotations);
+    config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = Constants.IntakeConstants.pivotSoftLimitReverse.in(Rotations);
 
     config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
     config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
@@ -100,24 +109,28 @@ public class IntakePivot extends AdvancedSubsystem {
           .getConfigurator()
           .apply(c.withInverted(InvertedValue.CounterClockwise_Positive));
 
+      c.Slot0.kS = 0;
+      c.Slot0.kG = 0;
+
       SmartDashboard.putData("Intake Visualizer", _mech);
 
-      _actuatorSim =
-          new SingleJointedArmSim(
-              DCMotor.getKrakenX60(1),
-              IntakeConstants.pivotGearRatio,
-              SingleJointedArmSim.estimateMOI(
-                  IntakeConstants.intakeLength.in(Meters), Units.lbsToKilograms(12)),
-              IntakeConstants.intakeLength.in(Meters),
-              IntakeConstants.pivotRaised.in(Radians),
-              IntakeConstants.pivotLowered.in(Radians),
-              true,
-              IntakeConstants.pivotRaised.in(Radians));
+      _pivotSim =
+          new DCMotorSim(
+              LinearSystemId.createDCMotorSystem(
+                  IntakeConstants.pivotkV.in(Volts.per(RadiansPerSecond)),
+                  IntakeConstants.pivotkA.in(Volts.per(RadiansPerSecondPerSecond))),
+              MotorConstants.krakenX44);
 
+      _pivotSim.setAngle(Constants.IntakeConstants.pivotRaised.in(Radians));
+      pivotAngleGetter.withUpdateFreqHz(Hertz.of(1000));
+      pivotAngleGetter.setUpdateFrequency(Hertz.of(1000));
+      
       startSimThread();
       }
 
-    setDefaultCommand(pivotTuck());
+    setDefaultCommand(pivotLower());
+    
+    new Trigger(() -> getAngle().gte(IntakeConstants.pivotTucked)).debounce(0.5);
   }
 
   private void startSimThread() {
@@ -135,18 +148,18 @@ public class IntakePivot extends AdvancedSubsystem {
 
               pivotMotorSimulationState.setSupplyVoltage(batteryVoltage);
 
-              _actuatorSim.setInputVoltage(
+              _pivotSim.setInputVoltage(
                   pivotMotorSimulationState.getMotorVoltageMeasure().in(Volts));
 
-              _actuatorSim.update(deltaTime);
+              _pivotSim.update(deltaTime);
 
               pivotMotorSimulationState.setRawRotorPosition(
                   Units.radiansToRotations(
-                      _actuatorSim.getAngleRads() * IntakeConstants.pivotGearRatio));
+                      _pivotSim.getAngularPosition() * IntakeConstants.pivotGearRatio));
 
               pivotMotorSimulationState.setRotorVelocity(
                   Units.radiansToRotations(
-                      _actuatorSim.getVelocityRadPerSec() * IntakeConstants.pivotGearRatio));
+                      _pivotSim.getAngularVelocity() * IntakeConstants.pivotGearRatio));
 
               _lastSimTime = currentTime;
             });
@@ -155,21 +168,46 @@ public class IntakePivot extends AdvancedSubsystem {
     _simNotifier.startPeriodic(1 / Constants.simUpdateFrequency.in(Hertz));
   }
 
+
+  @Logged(name = "In Bump Zone")
+  public boolean getInBumpZone() {
+    return inBumpZoneBooleanSupplier.getAsBoolean();
+  }
+
+  @Logged(name = "Pivot Lowered")
+  public boolean getPivotLowered() {
+    return pivotLowered;
+  }
+
   @Logged(name = "Angle")
   public double getAngle() {
     return pivotAngleGetter.refresh().getValue().in(Radians);
   }
 
   public Command pivotLower() {
-    return run(() -> pivotMotor.setControl(positionVoltage.withPosition(Constants.IntakeConstants.pivotLowered))).withName("Pivot Lower");
+    return run(() -> {
+          if (_inBumpZoneSupplier.getAsBoolean()) {
+            _pivotMotor.setControl(
+                positionVoltage.withPosition(IntakeConstants.pivotTuck)
+            );
+            return;
+          }
+
+          _pivotMotor.setControl(
+              positionVoltage.withPosition(IntakeConstants.pivotLowered)
+          );
+        })
+        .withName("Lower");
   }
 
   public Command pivotRaise() {
-    return run(() -> pivotMotor.setControl(positionVoltage.withPosition(Constants.IntakeConstants.pivotRaised))).withName("Pivot Raise");
+    pivotLowered = false;
+    return run(() -> pivotMotor.setControl(positionVoltage.withPosition(Constants.IntakeConstants.pivotRaised))).withName("Raise");
   }
 
   public Command pivotTuck() {
-    return run(() -> pivotMotor.setControl(positionVoltage.withPosition(Constants.IntakeConstants.pivotTuck))).withName("Pivot Tuck");
+    pivotLowered = false;
+    return run(() -> pivotMotor.setControl(positionVoltage.withPosition(Constants.IntakeConstants.pivotTuck))).withName("Tuck");
   }
 
   @Override
