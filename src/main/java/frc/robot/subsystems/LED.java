@@ -78,11 +78,11 @@ public class LED extends AdvancedSubsystem {
   }
 
   public void setDefaultColor() {
-    SmartDashboard.putData("Vibrant Red", run( () -> setDefaultCommand(vibrantRed())));
-    SmartDashboard.putData("Vibrant Blue", run( () -> setDefaultCommand(vibrantBlue())));
-    SmartDashboard.putData("Vibrant Green", run( () -> setDefaultCommand(vibrantGreen())));
-    SmartDashboard.putData("Vibrant Yellow", run( () -> setDefaultCommand(vibrantYellow())));
-    SmartDashboard.putData("Vibrant Purple", run( () -> setDefaultCommand(vibrantPurple())));
+    SmartDashboard.putData("Vibrant Red", run(() -> setDefaultCommand(vibrantRed())));
+    SmartDashboard.putData("Vibrant Blue", run(() -> setDefaultCommand(vibrantBlue())));
+    SmartDashboard.putData("Vibrant Green", run(() -> setDefaultCommand(vibrantGreen())));
+    SmartDashboard.putData("Vibrant Yellow", run(() -> setDefaultCommand(vibrantYellow())));
+    SmartDashboard.putData("Vibrant Purple", run(() -> setDefaultCommand(vibrantPurple())));
   }
 
   @Override

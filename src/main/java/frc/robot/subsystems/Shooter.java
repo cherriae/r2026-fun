@@ -99,7 +99,9 @@ public class Shooter extends AdvancedSubsystem {
   }
 
   public Command idle() {
-    return run(() -> leftMotor.setControl(shootVelocity.withVelocity(Constants.ShooterConstants.idleRPS))).withName("Idle");
+    return run(() ->
+            leftMotor.setControl(shootVelocity.withVelocity(Constants.ShooterConstants.idleRPS)))
+        .withName("Idle");
   }
 
   public void setFlywheelSpeed(AngularVelocity velocity) {
@@ -111,7 +113,8 @@ public class Shooter extends AdvancedSubsystem {
       inTolerance = false;
     }
 
-    if (Math.abs(errorRPS) > Constants.ShooterConstants.BangBangRPSTolerane.in(RotationsPerSecond)) {
+    if (Math.abs(errorRPS)
+        > Constants.ShooterConstants.BangBangRPSTolerane.in(RotationsPerSecond)) {
       leftMotor.setControl(dutyCycle.withOutput(1)); // 100% power if we're outside the tolerance
     } else {
       leftMotor.setControl(
@@ -124,7 +127,9 @@ public class Shooter extends AdvancedSubsystem {
   }
 
   public Command spit() {
-    return run(() -> leftMotor.setControl(shootVelocity.withVelocity(Constants.ShooterConstants.spitRPS))).withName("Spit");
+    return run(() ->
+            leftMotor.setControl(shootVelocity.withVelocity(Constants.ShooterConstants.spitRPS)))
+        .withName("Spit");
   }
 
   @Override

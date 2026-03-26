@@ -37,6 +37,7 @@ import frc.lib.InputStream;
 import frc.robot.Constants.Ports;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.Autos;
+import frc.robot.commands.Superstructure;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.Hopper;
@@ -61,6 +62,8 @@ public class Robot extends TimedRobot {
   private final CommandXboxController _driverController =
       new CommandXboxController(Ports.driverController);
 
+  private final FieldUtil _fieldUtil = new FieldUtil();
+
   // subsystems
   @Logged(name = "Swerve")
   private final Swerve _swerve = TunerConstants.createDrivetrain();
@@ -72,7 +75,8 @@ public class Robot extends TimedRobot {
   private final IntakeFeed _intakeFeed = new IntakeFeed();
 
   @Logged(name = "IntakePivot")
-  private final IntakePivot _intakePivot = new IntakePivot();
+  private final IntakePivot _intakePivot =
+      new IntakePivot(() -> FieldUtil.inBumpZone(_swerve.getPose()));
 
   @Logged(name = "Climb")
   private final Climb _climb = new Climb();
@@ -83,8 +87,6 @@ public class Robot extends TimedRobot {
   @Logged(name = "Shooting While Moving")
   private final Shooting _shooting = new Shooting();
 
-  private final FieldUtil _fieldUtil = new FieldUtil();
-
   private final LED _led = new LED(Constants.ledPort, Constants.LEDLength);
 
   private final Autos _autos = new Autos(_swerve);
@@ -92,6 +94,10 @@ public class Robot extends TimedRobot {
   private final NetworkTableInstance _ntInst;
 
   private boolean _fileOnlySet = false;
+
+  private Superstructure _superstructure =
+      new Superstructure(
+          _climb, _hopper, _intakeFeed, _intakePivot, _led, _shooter, _swerve, _shooting);
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -198,6 +204,16 @@ public class Robot extends TimedRobot {
   }
 
   private void configureDriverBindings() {
+
+        InputStream baseVelX =
+        InputStream.of(_driverController::getLeftY).deadband(0.02, 1).negate().signedPow(2);
+
+    InputStream baseVelY =
+        InputStream.of(_driverController::getLeftX).deadband(0.02, 1).negate().signedPow(2);
+
+    InputStream baseVelOmega =
+        InputStream.of(_driverController::getRightX).deadband(0.02, 1).negate().signedPow(2);
+        
     _swerve.setDefaultCommand(
         _swerve
             .drive(
@@ -223,10 +239,20 @@ public class Robot extends TimedRobot {
     _driverController.y().onTrue(_swerve.resetHeading());
 
     // intake feed
+    _driverController.leftBumper().whileTrue(_intakeFeed.feed(null)); // todo
 
     // intake pivot
+    _driverController.rightBumper().whileTrue(_intakePivot.pivotLower());
 
     // hopper feed and rollers and shoot when ready
+    _driverController
+        .rightTrigger()
+        .whileTrue(
+            _superstructure.shoot(
+                baseVelX.scale(
+                    SwerveConstants.driverTranslationalShootingVelocity.in(MetersPerSecond)),
+                baseVelY.scale(
+                    SwerveConstants.driverTranslationalShootingVelocity.in(MetersPerSecond))));
 
   }
 

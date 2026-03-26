@@ -55,7 +55,7 @@ public final class Constants {
   public static final CANBus swerveCANBus = new CANBus("canivore");
   public static final int ledPort = 9;
   public static final int LEDLength = 60;
-  
+
   public static final Frequency simUpdateFrequency = Hertz.of(100);
 
   public static final boolean isProfiling = false;
@@ -185,6 +185,9 @@ public final class Constants {
     public static final LinearVelocity driverTranslationalVelocity = MetersPerSecond.of(4);
     public static final AngularVelocity driverAngularVelocity = RadiansPerSecond.of(Math.PI);
 
+        public static final LinearVelocity driverTranslationalShootingVelocity =
+        MetersPerSecond.of(1.5);
+
     public static final LinearVelocity profileTranslationalVelocity = MetersPerSecond.of(1);
     public static final LinearAcceleration profileTranslationalAcceleration =
         MetersPerSecondPerSecond.of(2);
@@ -192,11 +195,16 @@ public final class Constants {
     public static final AngularVelocity profileAngularVelocity = RadiansPerSecond.of(Math.PI);
     public static final AngularAcceleration profileAngularAcceleration =
         RadiansPerSecondPerSecond.of(Math.PI * 2);
-
+    
     public static final Per<LinearVelocityUnit, DistanceUnit> poseTranslationalkP =
-        MetersPerSecond.per(Meter).ofNative(0);
+        MetersPerSecond.per(Meter).ofNative(2);
+    public static final Per<LinearVelocityUnit, LinearVelocityUnit> poseTranslationalkD =
+        MetersPerSecond.per(MetersPerSecond).ofNative(0);
+
     public static final Per<AngularVelocityUnit, AngleUnit> poseRotationkP =
-        RadiansPerSecond.per(Radian).ofNative(0);
+        RadiansPerSecond.per(Radian).ofNative(4.5);
+    public static final Per<AngularVelocityUnit, AngularVelocityUnit> poseRotationkD =
+        RadiansPerSecond.per(RadiansPerSecond).ofNative(0);
 
     public static final boolean ignorePoseTolerance = true;
 
@@ -289,7 +297,6 @@ public final class Constants {
         Volts.per(RotationsPerSecond).ofNative(1);
     public static final Per<VoltageUnit, AngularAccelerationUnit> pivotKa =
         Volts.per(RotationsPerSecondPerSecond).ofNative(1);
-
 
     public static final double feedGearRatio = 2;
     public static final double pivotGearRatio = 20;

@@ -16,7 +16,6 @@ import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
-import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.*;
 import com.ctre.phoenix6.swerve.utility.WheelForceCalculator.Feedforwards;
 import dev.doglog.DogLog;
@@ -27,6 +26,7 @@ import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -40,6 +40,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -52,7 +53,9 @@ import frc.lib.InputStream;
 import frc.lib.SelfChecked;
 import frc.robot.Constants;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.MotorConstants;
 import frc.robot.Constants.SwerveConstants;
+import frc.robot.Constants.VisionConstants;
 import frc.robot.Robot;
 import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
@@ -81,6 +84,10 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
   private final HolonomicController _poseController =
       new HolonomicController(getKinematics().getModules());
 
+  // for drive facing
+  private Rotation2d _previousRotationGoal = Rotation2d.kZero;
+  private double _lastRotationLoopTime = 0;
+
   private double _lastSimTime = 0;
   private Notifier _simNotifier;
 
@@ -88,17 +95,14 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
   private Set<Fault> _faults = new HashSet<Fault>();
   private FaultsTable _faultsTable =
       new FaultsTable(
-          NetworkTableInstance.getDefault().getTable("Self Check"),
+          NetworkTableInstance.getDefault().getTable("SelfChecked"),
           getName() + " Faults"); // TODO: watch out unit tests
 
   private boolean _hasError = false;
 
-  private final SwerveRequest.SysIdSwerveTranslation _translationCharacterization =
-      new SwerveRequest.SysIdSwerveTranslation();
-  private final SwerveRequest.SysIdSwerveSteerGains _steerCharacterization =
-      new SwerveRequest.SysIdSwerveSteerGains();
-  private final SwerveRequest.SysIdSwerveRotation _rotationCharacterization =
-      new SwerveRequest.SysIdSwerveRotation();
+  private final SysIdSwerveTranslation _translationCharacterization = new SysIdSwerveTranslation();
+  private final SysIdSwerveSteerGains _steerCharacterization = new SysIdSwerveSteerGains();
+  private final SysIdSwerveRotation _rotationCharacterization = new SysIdSwerveRotation();
 
   private final SysIdRoutine _translationRoutine =
       new SysIdRoutine(
@@ -148,16 +152,18 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
   @Logged(name = "Is Open Loop")
   public boolean isOpenLoop = true;
 
-  @Logged(name = "Driver Chassis Speeds")
-  private final ChassisSpeeds _driverChassisSpeeds = new ChassisSpeeds();
-
   @Logged(name = "Ignore Vision Estimates")
   private boolean _ignoreVisionEstimates = false;
 
-  @Logged(name = "Distance To Hub")
-  public Distance distanceToHub = Meters.of(0);
+  @Logged(name = "Left Arducam")
+  private final VisionPoseEstimator _leftArducam =
+      VisionPoseEstimator.buildFromConstants(VisionConstants.leftArducam, this::getHeadingAtTime);
 
-  private final List<VisionPoseEstimator> _cameras = List.of();
+  @Logged(name = "Right Arducam")
+  private final VisionPoseEstimator _rightArducam =
+      VisionPoseEstimator.buildFromConstants(VisionConstants.rightArducam, this::getHeadingAtTime);
+
+  private final List<VisionPoseEstimator> _cameras = List.of(_leftArducam, _rightArducam);
 
   private final List<VisionPoseEstimate> _newEstimates = new ArrayList<>();
 
@@ -250,7 +256,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
 
     Fault fault = new Fault(description, faultType);
 
-    DogLog.logFault(fault.toString());
+    DogLog.logFault(fault.toString(), null);
 
     _faults.add(fault);
     _faultsTable.set(_faults);
@@ -346,17 +352,33 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
   }
 
   /**
-   * Creates a new command that drives the chassis in teleop.
+   * Drives the chassis in teleop, with the chassis fixed at a supplied heading. Open loop / field
+   * oriented behavior is configured with {@link #isOpenLoop} and {@link #isFieldOriented}.
    *
    * @param velX The x velocity in meters per second.
    * @param velY The y velocity in meters per second.
-   * @param velOmega The rotational velocity in radians per second.
+   * @param heading The heading the chassis should drive at.
    */
-  public Command drive(InputStream velX, InputStream velY, InputStream velOmega) {
-    return run(() -> {
-          drive(velX.get(), velY.get(), velOmega.get());
-        })
-        .withName("Drive");
+  public Command driveFacing(InputStream velX, InputStream velY, Supplier<Rotation2d> heading) {
+    return drive(
+            velX,
+            velY,
+            () -> {
+              double omegaFeedforward =
+                  (heading.get().minus(_previousRotationGoal).getRadians())
+                      / (Timer.getFPGATimestamp() - _lastRotationLoopTime);
+
+              _previousRotationGoal = heading.get();
+              _lastRotationLoopTime = Timer.getFPGATimestamp();
+
+              return _poseController.calculate(
+                          new Pose2d(Translation2d.kZero, heading.get()),
+                          new Pose2d(Translation2d.kZero, getHeading()))
+                      .omegaRadiansPerSecond
+                  + omegaFeedforward;
+            })
+        .beforeStarting(runOnce(() -> isOpenLoop = false))
+        .withName("Drive Facing");
   }
 
   /**
@@ -367,28 +389,27 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
    * @param velY The y velocity in meters per second.
    * @param velOmega The rotational velocity in radians per second.
    */
-  public void drive(double velX, double velY, double velOmega) {
-    _driverChassisSpeeds.vxMetersPerSecond = velX;
-    _driverChassisSpeeds.vyMetersPerSecond = velY;
-    _driverChassisSpeeds.omegaRadiansPerSecond = velOmega;
-
-    if (isFieldOriented) {
-      setControl(
-          _fieldCentricRequest
-              .withVelocityX(velX)
-              .withVelocityY(velY)
-              .withRotationalRate(velOmega)
-              .withDriveRequestType(
-                  isOpenLoop ? DriveRequestType.OpenLoopVoltage : DriveRequestType.Velocity));
-    } else {
-      setControl(
-          _robotCentricRequest
-              .withVelocityX(velX)
-              .withVelocityY(velY)
-              .withRotationalRate(velOmega)
-              .withDriveRequestType(
-                  isOpenLoop ? DriveRequestType.OpenLoopVoltage : DriveRequestType.Velocity));
-    }
+  public Command drive(InputStream velX, InputStream velY, InputStream velOmega) {
+    return run(() -> {
+          if (isFieldOriented) {
+            setControl(
+                _fieldCentricRequest
+                    .withVelocityX(velX.get())
+                    .withVelocityY(velY.get())
+                    .withRotationalRate(velOmega.get())
+                    .withDriveRequestType(
+                        isOpenLoop ? DriveRequestType.OpenLoopVoltage : DriveRequestType.Velocity));
+          } else {
+            setControl(
+                _robotCentricRequest
+                    .withVelocityX(velX.get())
+                    .withVelocityY(velY.get())
+                    .withRotationalRate(velOmega.get())
+                    .withDriveRequestType(
+                        isOpenLoop ? DriveRequestType.OpenLoopVoltage : DriveRequestType.Velocity));
+          }
+        })
+        .withName("Drive");
   }
 
   /**
@@ -397,8 +418,8 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
    * @param sample The SwerveSample.
    */
   public void followTrajectory(SwerveSample sample) {
-    var desiredSpeeds = sample.getChassisSpeeds();
-    var desiredPose = sample.getPose();
+    ChassisSpeeds desiredSpeeds = sample.getChassisSpeeds();
+    Pose2d desiredPose = sample.getPose();
 
     desiredSpeeds = _poseController.calculate(desiredSpeeds, desiredPose, getPose());
 
@@ -409,6 +430,42 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
             .withWheelForceFeedforwardsY(sample.moduleForcesY()));
   }
 
+  /**
+   * Sets the chassis state to the given {@link SwerveSample} for trajectory following. Omega is
+   * overriden by the omega generated from the heading profile to follow the supplied heading.
+   *
+   * @param sample The SwerveSample.
+   * @param heading Heading to follow.
+   */
+  public void followTrajectoryFacing(SwerveSample sample, Rotation2d heading) {
+    ChassisSpeeds desiredSpeeds = sample.getChassisSpeeds();
+    Pose2d desiredPose = sample.getPose();
+
+    desiredSpeeds =
+        new ChassisSpeeds(
+            desiredSpeeds.vxMetersPerSecond,
+            desiredSpeeds.vyMetersPerSecond,
+            (heading.minus(_previousRotationGoal).getRadians())
+                / (Timer.getFPGATimestamp() - _lastRotationLoopTime));
+
+    _previousRotationGoal = heading;
+    _lastRotationLoopTime = Timer.getFPGATimestamp();
+
+    desiredPose = new Pose2d(desiredPose.getTranslation(), heading);
+
+    desiredSpeeds = _poseController.calculate(desiredSpeeds, desiredPose, getPose());
+
+    // assume shot heading second deriv is low (and choreo accel is low) and set alpha to 0
+    Feedforwards sampleLinearForces =
+        _poseController.getWheelForceCalculator().calculate(sample.ax, sample.ay, 0);
+
+    setControl(
+        _fieldSpeedsRequest
+            .withSpeeds(desiredSpeeds)
+            .withWheelForceFeedforwardsX(sampleLinearForces.x_newtons)
+            .withWheelForceFeedforwardsY(sampleLinearForces.y_newtons));
+  }
+
   /** Drives the robot in a straight line to some given goal pose. */
   public Command driveTo(Pose2d goalPose) {
     return driveTo(() -> goalPose);
@@ -417,21 +474,27 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
   /** Drives the robot in a straight line to some given goal pose. */
   public Command driveTo(Supplier<Pose2d> goalPose) {
     return run(() -> {
-          ChassisSpeeds speeds = _poseController.calculate(getPose());
-          Feedforwards wheelForces = _poseController.getWheelForces();
+          _poseController.nextSetpoint(getHeading());
+
+          ChassisSpeeds desiredSpeeds =
+              _poseController.calculate(
+                  _poseController.getSetpointSpeeds(),
+                  _poseController.getSetpointPose(),
+                  getPose());
 
           setControl(
               _fieldSpeedsRequest
-                  .withSpeeds(speeds)
-                  .withWheelForceFeedforwardsX(wheelForces.x_newtons)
-                  .withWheelForceFeedforwardsY(wheelForces.y_newtons));
+                  .withSpeeds(desiredSpeeds)
+                  .withWheelForceFeedforwardsX(_poseController.getWheelForces().x_newtons)
+                  .withWheelForceFeedforwardsY(_poseController.getWheelForces().y_newtons));
         })
         .beforeStarting(
-            () ->
-                _poseController.reset(
-                    getPose(),
-                    goalPose.get(),
-                    ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getHeading())))
+            () -> {
+              _poseController.reset(
+                  getPose(),
+                  goalPose.get(),
+                  ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getHeading()));
+            })
         .until(_poseController::isFinished)
         .withName("Drive To");
   }
@@ -527,17 +590,10 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
           });
     }
 
-    distanceToHub = getDistanceToHub();
+    DogLog.log(getName() + "/Current Command", currentCommandName());
+    DogLog.log(getName() + "/Has Error", _hasError);
 
     DogLog.timeEnd("Timing/Swerve/periodic()");
-  }
-
-  public Distance getDistanceToHub() {
-    if (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue) {
-      return Meters.of(FieldConstants.blueHub.getDistance(getPose().getTranslation()));
-    } else {
-      return Meters.of(FieldConstants.redHub.getDistance(getPose().getTranslation()));
-    }
   }
 
   @Override
@@ -557,7 +613,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
 
     return Commands.runOnce(
             () -> {
-              DCMotor driveMotor = DCMotor.getKrakenX60(1);
+              DCMotor driveMotor = MotorConstants.krakenX60;
 
               double chassisTorque =
                   (driveMotor.getTorque(driveMotor.getCurrent(0, angularkA.get()))
@@ -577,7 +633,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
   public Command calculateWheelCOF() {
     return Commands.runOnce(
             () -> {
-              DCMotor driveMotor = DCMotor.getKrakenX60(1);
+              DCMotor driveMotor = MotorConstants.krakenX60;
 
               double totalFrictionForce =
                   (driveMotor.getTorque(TunerConstants.FrontLeft.SlipCurrent)
@@ -603,7 +659,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem, SelfChec
 
     return Commands.runOnce(
             () -> {
-              DCMotor driveMotor = DCMotor.getKrakenX60(1);
+              DCMotor driveMotor = MotorConstants.krakenX60;
 
               double maxSpeed =
                   Units.radiansPerSecondToRotationsPerMinute(
