@@ -80,7 +80,7 @@ public class Robot extends TimedRobot {
   @Logged(name = "Hopper")
   private final Hopper _hopper = new Hopper();
 
-  @Logged(name = "Shooting")
+  @Logged(name = "Shooting While Moving")
   private final Shooting _shooting = new Shooting();
 
   private final FieldUtil _fieldUtil = new FieldUtil();

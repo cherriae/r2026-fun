@@ -23,10 +23,12 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.AngleUnit;
+import edu.wpi.first.units.AngularAccelerationUnit;
 import edu.wpi.first.units.AngularVelocityUnit;
 import edu.wpi.first.units.DistanceUnit;
 import edu.wpi.first.units.LinearVelocityUnit;
 import edu.wpi.first.units.VoltageUnit;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
@@ -53,6 +55,8 @@ public final class Constants {
   public static final CANBus swerveCANBus = new CANBus("canivore");
   public static final int ledPort = 9;
   public static final int LEDLength = 60;
+  
+  public static final Frequency simUpdateFrequency = Hertz.of(100);
 
   public static final boolean isProfiling = false;
 
@@ -215,7 +219,10 @@ public final class Constants {
 
     public static final double shooterGearRatio = 1.2;
 
-    public static final double RPSTolerance = 5;
+    public static final AngularVelocity RPSTolerance = RotationsPerSecond.of(5);
+    public static final AngularVelocity BangBangRPSTolerane = RotationsPerSecond.of(3);
+    public static final AngularVelocity idleRPS = RotationsPerSecond.of(20);
+    public static final AngularVelocity spitRPS = RotationsPerSecond.of(5);
 
     // shooter rps, feed rps, roller rps
     public static final InterpolatingMatrixTreeMap<Double, N3, N1> hubPresets =
@@ -272,16 +279,29 @@ public final class Constants {
     public static final Per<VoltageUnit, AngularVelocityUnit> feedKp =
         Volts.per(RotationsPerSecond).ofNative(0.6);
 
+    public static final AngularVelocity feedSpeed = RotationsPerSecond.of(30);
+
     public static final Voltage pivotKg = Volts.of(0);
     public static final Voltage pivotKs = Volts.of(0);
-    public static final Per<VoltageUnit, AngularVelocityUnit> pivotKv =
-        Volts.per(RotationsPerSecond).ofNative(0);
     public static final Per<VoltageUnit, AngularVelocityUnit> pivotKp =
         Volts.per(RotationsPerSecond).ofNative(0);
-    public static final Per<VoltageUnit, AngleUnit> pivotKa = Volts.per(Radian).ofNative(0);
+    public static final Per<VoltageUnit, AngularVelocityUnit> pivotKv =
+        Volts.per(RotationsPerSecond).ofNative(1);
+    public static final Per<VoltageUnit, AngularAccelerationUnit> pivotKa =
+        Volts.per(RotationsPerSecondPerSecond).ofNative(1);
+
 
     public static final double feedGearRatio = 2;
     public static final double pivotGearRatio = 20;
+
+    public static final Angle pivotRaised = Rotations.of(0.25);
+    public static final Angle pivotLowered = Rotations.of(0.6);
+    public static final Angle pivotTuck = Rotations.of(0.5);
+
+    public static final Angle pivotSoftLimitForward = Rotations.of(0.2);
+    public static final Angle pivotSoftLimitReverse = Rotations.of(0.7);
+
+    public static final Distance intakeLength = Inches.of(14);
   }
 
   public class ClimberConstants {
