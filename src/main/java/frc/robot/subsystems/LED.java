@@ -24,6 +24,7 @@ public class LED extends AdvancedSubsystem {
     led.start();
 
     setDefaultCommand(vibrantBlue());
+    setDefaultColor();
   }
 
   // idle

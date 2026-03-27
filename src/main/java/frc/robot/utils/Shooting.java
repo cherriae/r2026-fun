@@ -17,7 +17,10 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.MutAngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
+import frc.robot.subsystems.LED;
+
 import java.util.function.Supplier;
 
 @Logged
@@ -57,8 +60,13 @@ public class Shooting {
 
   private final int maxIterations = 10;
   private final double errorTolerance = 0.5;
+  private final LED _led;
 
-  public Shooting() {}
+  public Shooting(LED led) {
+    _led = led;
+
+    new Trigger(() -> isValid).onTrue(_led.vibrantGreen()).onFalse(_led.vibrantRed());
+  }
 
   public void updateIsValid(
       boolean shooterReady,

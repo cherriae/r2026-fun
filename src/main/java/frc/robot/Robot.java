@@ -64,6 +64,8 @@ public class Robot extends TimedRobot {
 
   private final FieldUtil _fieldUtil = new FieldUtil();
 
+  private final LED _led = new LED(Constants.ledPort, Constants.LEDLength);
+
   // subsystems
   @Logged(name = "Swerve")
   private final Swerve _swerve = TunerConstants.createDrivetrain();
@@ -85,19 +87,17 @@ public class Robot extends TimedRobot {
   private final Hopper _hopper = new Hopper();
 
   @Logged(name = "Shooting While Moving")
-  private final Shooting _shooting = new Shooting();
-
-  private final LED _led = new LED(Constants.ledPort, Constants.LEDLength);
-
-  private final Autos _autos = new Autos(_swerve);
-
-  private final NetworkTableInstance _ntInst;
-
-  private boolean _fileOnlySet = false;
+  private final Shooting _shooting = new Shooting(_led);
 
   private Superstructure _superstructure =
       new Superstructure(
           _climb, _hopper, _intakeFeed, _intakePivot, _led, _shooter, _swerve, _shooting);
+
+  private final Autos _autos = new Autos(_swerve, _superstructure);
+
+  private final NetworkTableInstance _ntInst;
+
+  private boolean _fileOnlySet = false;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -152,13 +152,9 @@ public class Robot extends TimedRobot {
 
     chooser.addRoutine(
         "Peter",
-        () -> _autos.peter(
-            _superstructure.shoot(InputStream.of(() -> 1), InputStream.of(() -> 1)),
-            _superstructure.intake(),
-            _intakePivot.raise()
-        )
-    );
-    
+        () ->
+            _autos.peter(_superstructure.shoot(InputStream.of(() -> 0), InputStream.of(() -> 0)).withTimeout(3)));
+
     SmartDashboard.putData("Auto Chooser", chooser);
 
     autonomous().whileTrue(chooser.selectedCommandScheduler());

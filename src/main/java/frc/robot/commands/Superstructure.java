@@ -62,7 +62,18 @@ public class Superstructure {
   }
 
   public Command intake() {
-    return parallel(_intakePivot.lower(), _intakeFeed.feed(IntakeConstants.intakeFeedVelocity))
+    return parallel(
+            _intakePivot.lower(),
+            _intakeFeed.feed(IntakeConstants.intakeFeedVelocity),
+            _led.vibrantYellow())
         .withName("Intake");
   }
+
+  public Command stopIntaking() {
+    return parallel(_intakeFeed.stop(), _intakePivot.tuck(), _led.vibrantYellow()).withName("Stop Intaking");
+  }
+
+  // public Command climb() {
+  //   return parallel(_climb.climb(), _led.vibrantPurple()).withName("Climb");
+  // }
 }

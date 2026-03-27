@@ -15,7 +15,7 @@ public class Autos {
 
   private final Swerve _swerve;
 
-  public Autos(Swerve swerve) {
+  public Autos(Swerve swerve, Superstructure superstructure) {
     _swerve = swerve;
 
     _factory =
@@ -31,20 +31,20 @@ public class Autos {
               DogLog.log("Auto/Current Trajectory Duration", traj.getTotalTime());
               DogLog.log("Auto/Current Trajectory Is Active", isActive);
             });
+
+    _factory.bind("Intake", superstructure.intake());
+    _factory.bind("Stop Intake", superstructure.stopIntaking());
   }
 
-
-  public AutoRoutine peter(Command shootCommand, Command intake, Command stopIntaking) {
+  public AutoRoutine peter(Command shootCommand) {
     AutoRoutine routine = _factory.newRoutine("peter");
 
     AutoTrajectory pTrajectory = routine.trajectory("peter");
 
-    pTrajectory.atTime("Intake").onTrue(intake);
-    pTrajectory.atTime("Stop Intake").onTrue(stopIntaking);
     pTrajectory.atTime("Shoot").onTrue(shootCommand);
 
-    routine.active().onTrue(sequence(pTrajectory.resetOdometry(), pTrajectory.cmd()));
-    
+    routine.active().onTrue(sequence(pTrajectory.resetOdometry(), pTrajectory.cmd(), _swerve.brake()));
+
     return routine;
   }
 }
