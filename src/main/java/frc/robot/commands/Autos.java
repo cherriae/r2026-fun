@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import static edu.wpi.first.wpilibj2.command.Commands.parallel;
 import static edu.wpi.first.wpilibj2.command.Commands.sequence;
 
 import choreo.auto.AutoFactory;
@@ -38,16 +39,16 @@ public class Autos {
     _factory.bind("Stop Intake", superstructure.stopIntaking());
   }
 
-  public AutoRoutine peter(Command shootCommand) {
+  public AutoRoutine peter(Supplier<Command> shootCommand) {
     AutoRoutine routine = _factory.newRoutine("peter");
 
     AutoTrajectory pTrajectory = routine.trajectory("peter");
 
-    pTrajectory.atTime("Shoot").onTrue(shootCommand);
+    pTrajectory.atTime("Shoot").onTrue(shootCommand.get().withTimeout(2));
 
     routine
         .active()
-        .onTrue(sequence(pTrajectory.resetOdometry(), pTrajectory.cmd(), _swerve.brake()));
+        .onTrue(sequence(pTrajectory.resetOdometry(),  pTrajectory.cmd(), new WaitCommand(3), _swerve.brake()));
 
     return routine;
   }
@@ -55,14 +56,49 @@ public class Autos {
   public AutoRoutine elvis(Supplier<Command> shootCommand, Supplier<Command> stopShootingCommand) {
     AutoRoutine routine = _factory.newRoutine("elvis");
 
+    AutoTrajectory eTrajectory = routine.trajectory("elvis");
+
+    eTrajectory.atTime("Shoot").onTrue(shootCommand.get().withTimeout(2));
+    eTrajectory.atTime("Stop Shooting").onTrue(stopShootingCommand.get());
+
+    routine
+        .active()
+        .onTrue(sequence(eTrajectory.resetOdometry(), eTrajectory.cmd(), new WaitCommand(3), _swerve.brake()));
+
+    return routine;
+  }
+
+  public AutoRoutine peterAndJerry(Supplier<Command> shootCommand, Supplier<Command> stopShootingCommand) {
+    AutoRoutine routine = _factory.newRoutine("peterAndJerry");
+
+    AutoTrajectory pTrajectory = routine.trajectory("peter");
+    AutoTrajectory jTrajectory = routine.trajectory("jerry");
+
+    pTrajectory.atTime("Shoot").onTrue(shootCommand.get().withTimeout(2));
+
+    jTrajectory.atTime("Shoot").onTrue(shootCommand.get().withTimeout(3));
+    jTrajectory.atTime("Stop Shooting").onTrue(stopShootingCommand.get());
+
+    routine
+        .active()
+        .onTrue(sequence(pTrajectory.resetOdometry(),  pTrajectory.cmd(), new WaitCommand(3), jTrajectory.resetOdometry(), jTrajectory.cmd(), new WaitCommand(3), _swerve.brake()));
+
+    return routine;
+  }
+
+  public AutoRoutine elvisAndRyan(Supplier<Command> shootCommand, Supplier<Command> stopShootingCommand) {
+    AutoRoutine routine = _factory.newRoutine("elvisAndRyan");
+
     AutoTrajectory eTraj = routine.trajectory("elvis");
     AutoTrajectory rTraj = routine.trajectory("ryan");
 
     eTraj.atTime("Shoot").onTrue(shootCommand.get().withTimeout(3));
 
-    eTraj.atTime("Stop Shooting").onTrue(stopShootingCommand.get().withTimeout(3));
+    eTraj.atTime("Stop Shooting").onTrue(stopShootingCommand.get());
 
     rTraj.atTime("Shoot").onTrue(shootCommand.get());
+
+    rTraj.atTime("Stop Shooting").onTrue(stopShootingCommand.get());
 
     routine
         .active()

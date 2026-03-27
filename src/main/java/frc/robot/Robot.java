@@ -150,10 +150,15 @@ public class Robot extends TimedRobot {
 
     AutoChooser chooser = new AutoChooser();
 
-    chooser.addRoutine("Peter", () -> _autos.peter(_superstructure.autoShoot().withTimeout(3)));
-
+    chooser.addRoutine("peter", () -> _autos.peterAndJerry(() -> _superstructure.autoShoot(), () -> _shooter.idle()));
+    
     chooser.addRoutine(
-        "Elvis", () -> _autos.elvis(() -> _superstructure.autoShoot(), () -> _shooter.idle()));
+        "elvis", () -> _autos.elvisAndRyan(() -> _superstructure.autoShoot(), () -> _shooter.idle()));
+    
+    chooser.addRoutine("elvisAndRyan", () -> _autos.elvisAndRyan(() -> _superstructure.autoShoot(), () -> _shooter.idle()));
+    
+    chooser.addRoutine(
+        "peterAndJerry", () -> _autos.peterAndJerry(() -> _superstructure.autoShoot(), () -> _shooter.idle()));
 
     SmartDashboard.putData("Auto Chooser", chooser);
 

@@ -30,11 +30,15 @@ public class FieldUtil {
     return DriverStation.isAutonomousEnabled();
   }
 
-  public double getMatchTime() {
+  public static double getMatchTime() {
     return DriverStation.getMatchTime();
   }
 
-  public boolean isHubActive() {
+  public static boolean isHubActive() {
+    if (alliance.isEmpty()) {
+      return true; // testing
+    }
+
     if (isAuton() || getMatchTime() <= 30) { // endgame
       return true;
     }
