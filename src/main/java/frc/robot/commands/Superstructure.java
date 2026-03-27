@@ -6,7 +6,6 @@ package frc.robot.commands;
 
 import static edu.wpi.first.wpilibj2.command.Commands.parallel;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.InputStream;
 import frc.robot.Constants.IntakeConstants;
@@ -66,8 +65,8 @@ public class Superstructure {
     return parallel(
             _shooter.shoot(() -> _shooting.getFlywheelSpeed()),
             _hopper.feed(() -> _shooting.getRollerSpeed(), () -> _shooting.getFloorSpeed()),
-            _intakePivot.raise()
-        ).withName("Auto Shoot");
+            _intakePivot.raise())
+        .withName("Auto Shoot");
   }
 
   public Command intake() {
@@ -79,7 +78,8 @@ public class Superstructure {
   }
 
   public Command stopIntaking() {
-    return parallel(_intakeFeed.stop(), _intakePivot.tuck(), _led.vibrantYellow()).withName("Stop Intaking");
+    return parallel(_intakeFeed.stop(), _intakePivot.tuck(), _led.vibrantYellow())
+        .withName("Stop Intaking");
   }
 
   // public Command climb() {
