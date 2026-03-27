@@ -153,7 +153,12 @@ public class Robot extends TimedRobot {
     chooser.addRoutine(
         "Peter",
         () ->
-            _autos.peter(_superstructure.shoot(InputStream.of(() -> 0), InputStream.of(() -> 0)).withTimeout(3)));
+            _autos.peter(_superstructure.autoShoot().withTimeout(3)));
+
+    chooser.addRoutine(
+        "Elvis",
+        () ->
+            _autos.elvis(() -> _superstructure.autoShoot(), () -> _shooter.idle()));
 
     SmartDashboard.putData("Auto Chooser", chooser);
 
