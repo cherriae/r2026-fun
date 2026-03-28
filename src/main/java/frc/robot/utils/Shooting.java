@@ -20,8 +20,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
 import frc.robot.subsystems.LED;
-
-import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
 @Logged

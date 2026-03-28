@@ -1,6 +1,5 @@
 package frc.robot.commands;
 
-import static edu.wpi.first.wpilibj2.command.Commands.parallel;
 import static edu.wpi.first.wpilibj2.command.Commands.sequence;
 
 import choreo.auto.AutoFactory;
@@ -48,7 +47,12 @@ public class Autos {
 
     routine
         .active()
-        .onTrue(sequence(pTrajectory.resetOdometry(),  pTrajectory.cmd(), new WaitCommand(3), _swerve.brake()));
+        .onTrue(
+            sequence(
+                pTrajectory.resetOdometry(),
+                pTrajectory.cmd(),
+                new WaitCommand(3),
+                _swerve.brake()));
 
     return routine;
   }
@@ -63,12 +67,18 @@ public class Autos {
 
     routine
         .active()
-        .onTrue(sequence(eTrajectory.resetOdometry(), eTrajectory.cmd(), new WaitCommand(3), _swerve.brake()));
+        .onTrue(
+            sequence(
+                eTrajectory.resetOdometry(),
+                eTrajectory.cmd(),
+                new WaitCommand(3),
+                _swerve.brake()));
 
     return routine;
   }
 
-  public AutoRoutine peterAndJerry(Supplier<Command> shootCommand, Supplier<Command> stopShootingCommand) {
+  public AutoRoutine peterAndJerry(
+      Supplier<Command> shootCommand, Supplier<Command> stopShootingCommand) {
     AutoRoutine routine = _factory.newRoutine("peterAndJerry");
 
     AutoTrajectory pTrajectory = routine.trajectory("peter");
@@ -81,12 +91,21 @@ public class Autos {
 
     routine
         .active()
-        .onTrue(sequence(pTrajectory.resetOdometry(),  pTrajectory.cmd(), new WaitCommand(3), jTrajectory.resetOdometry(), jTrajectory.cmd(), new WaitCommand(3), _swerve.brake()));
+        .onTrue(
+            sequence(
+                pTrajectory.resetOdometry(),
+                pTrajectory.cmd(),
+                new WaitCommand(3),
+                jTrajectory.resetOdometry(),
+                jTrajectory.cmd(),
+                new WaitCommand(3),
+                _swerve.brake()));
 
     return routine;
   }
 
-  public AutoRoutine elvisAndRyan(Supplier<Command> shootCommand, Supplier<Command> stopShootingCommand) {
+  public AutoRoutine elvisAndRyan(
+      Supplier<Command> shootCommand, Supplier<Command> stopShootingCommand) {
     AutoRoutine routine = _factory.newRoutine("elvisAndRyan");
 
     AutoTrajectory eTraj = routine.trajectory("elvis");
